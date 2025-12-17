@@ -1,1 +1,183 @@
 # DW_Final
+# Simple Retro - 簡易照片日記
+
+一個使用 PHP、MySQL、HTML、CSS 和 JavaScript 製作的照片日記網站，模仿 Retro 的介面風格。
+
+## 📋 功能特色
+
+### 使用者認證
+- ✅ 註冊新帳號（自動建立預設相簿 "Recents"）
+- ✅ 登入/登出功能
+- ✅ Session 管理與安全驗證
+
+### 照片管理
+- ✅ 新增照片（支援圖片網址）
+- ✅ 編輯照片描述 (Caption)
+- ✅ 變更照片所屬相簿
+- ✅ 刪除照片
+- ✅ 照片預覽功能
+
+### 相簿管理
+- ✅ 新增相簿
+- ✅ 編輯相簿名稱
+- ✅ 刪除相簿（連同所有照片）
+- ✅ "Recents" 預設相簿保護（不可修改/刪除）
+
+### UI/UX
+- ✅ 深色主題 Retro 風格設計
+- ✅ 響應式設計（支援手機/平板/桌面）
+- ✅ 網格卡片式照片牆
+- ✅ Modal 彈窗操作
+- ✅ Toast 通知訊息
+- ✅ 圖片即時預覽
+
+## 🏗️ 系統架構
+
+```
+simple-retro/
+├── index.php          # 登入頁面（首頁）
+├── register.php       # 註冊頁面
+├── home.php           # 主頁面（照片日記）
+├── logout.php         # 登出處理
+├── api.php            # API 端點（處理 AJAX 請求）
+├── config.php         # 資料庫設定與共用函數
+├── style.css          # 樣式表
+├── app.js             # 前端 JavaScript
+├── database.sql       # 資料庫初始化腳本
+├── uploads/           # 上傳檔案目錄（預留）
+└── README.md          # 說明文件
+```
+
+## 🗃️ 資料庫設計
+
+### users 資料表
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| id | INT | 主鍵，自動遞增 |
+| username | VARCHAR(50) | 使用者名稱，唯一 |
+| password | VARCHAR(255) | 密碼（bcrypt 加密）|
+| created_at | TIMESTAMP | 建立時間 |
+
+### albums 資料表
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| id | INT | 主鍵，自動遞增 |
+| user_id | INT | 外鍵，關聯 users |
+| name | VARCHAR(100) | 相簿名稱 |
+| is_default | BOOLEAN | 是否為預設相簿 |
+| created_at | TIMESTAMP | 建立時間 |
+
+### photos 資料表
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| id | INT | 主鍵，自動遞增 |
+| user_id | INT | 外鍵，關聯 users |
+| album_id | INT | 外鍵，關聯 albums |
+| image_url | VARCHAR(500) | 圖片網址 |
+| caption | TEXT | 照片描述 |
+| created_at | TIMESTAMP | 建立時間 |
+| updated_at | TIMESTAMP | 更新時間 |
+
+### ER Diagram
+```
+users (1) ──────< (N) albums
+  │                    │
+  │                    │
+  └──< (N) photos >────┘
+```
+
+## 🚀 安裝與設定
+
+### 1. 資料庫設定
+```bash
+# 登入 MySQL
+mysql -u cvml -p
+
+# 執行資料庫腳本
+source database.sql
+```
+
+或直接在 phpMyAdmin 執行 `database.sql` 內容。
+
+### 2. 設定資料庫連線
+編輯 `config.php`，確認連線資訊：
+```php
+define('DB_HOST', 'localhost');
+define('DB_USER', 'cvml');
+define('DB_PASS', 'dwpcvml2025');
+define('DB_NAME', 'simple_retro');
+```
+
+### 3. 部署檔案
+將所有檔案上傳至網頁伺服器的 DocumentRoot。
+
+### 4. 測試
+開啟瀏覽器，前往網站首頁。
+
+## 👤 測試帳號
+
+| 帳號 | 密碼 |
+|------|------|
+| demo | password123 |
+| testuser | password123 |
+
+## 📡 API 端點
+
+所有 API 請求都透過 `api.php` 處理：
+
+### 照片相關
+| 動作 | 方法 | 參數 |
+|------|------|------|
+| get_photos | GET | album_id (可選) |
+| add_photo | POST | image_url, caption, album_id |
+| update_photo | POST | photo_id, image_url, caption, album_id |
+| delete_photo | POST | photo_id |
+
+### 相簿相關
+| 動作 | 方法 | 參數 |
+|------|------|------|
+| get_albums | GET | - |
+| add_album | POST | album_name |
+| update_album | POST | album_id, album_name |
+| delete_album | POST | album_id |
+
+## 🔒 安全機制
+
+1. **密碼加密**：使用 PHP `password_hash()` (bcrypt)
+2. **SQL Injection 防護**：使用 Prepared Statements
+3. **XSS 防護**：使用 `htmlspecialchars()` 輸出
+4. **Session 管理**：驗證使用者權限
+5. **API 權限檢查**：確認資料所有權
+
+## 🎨 設計說明
+
+- **配色方案**：深色主題，主色為珊瑚紅 (#ff6b6b)，輔色為青綠色 (#4ecdc4)
+- **字體**：Noto Sans TC（支援繁體中文）
+- **佈局**：側邊欄 + 主內容區的經典雙欄設計
+- **互動**：Hover 效果、漸變動畫、Toast 通知
+
+## 📱 響應式設計
+
+- **桌面** (>992px)：完整側邊欄 + 多欄網格
+- **平板** (768-992px)：可收合側邊欄 + 3欄網格
+- **手機** (<768px)：隱藏側邊欄 + 2欄網格
+
+## ⚠️ 注意事項
+
+1. 本專案使用圖片網址方式儲存照片，未實作檔案上傳功能
+2. "Recents" 相簿為系統預設，不可刪除或重新命名
+3. 刪除相簿時，該相簿內的所有照片也會一併刪除
+4. 建議使用 Google Chrome 瀏覽器以獲得最佳體驗
+
+## 📝 測試資料
+
+資料庫腳本 (`database.sql`) 包含：
+- 2 個測試使用者
+- 6 個相簿
+- 11 張照片
+
+滿足「至少 10 筆測試資料」的要求。
+
+---
+
+Made with ❤️ for Web Development Course
