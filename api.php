@@ -28,6 +28,10 @@ switch ($action) {
     case 'delete_photo':
         deletePhoto($conn, $userId);
         break;
+
+    case 'analyze_photo':
+        analyzePhoto($conn, $userId);
+        break;
     
     // ==================== 相簿相關 ====================
     
@@ -215,7 +219,7 @@ function handleFileUpload($file, $userId) {
     // 驗證檔案類型
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $file['tmp_name']);
-    finfo_close($finfo);
+    // finfo_close($finfo); // Deprecated in PHP 8.5+
     
     if (!in_array($mimeType, $allowedTypes)) {
         jsonResponse(['error' => '不支援的檔案格式，請上傳 JPG、PNG、GIF 或 WebP 圖片'], 400);
@@ -494,6 +498,110 @@ function deleteAlbum($conn, $userId) {
     $stmt->close();
 }
 
+function analyzePhoto($conn, $userId) {
+    $photoId = intval($_POST['photo_id'] ?? 0);
+    
+    // 取得照片資訊
+    $stmt = $conn->prepare("SELECT image_url FROM photos WHERE id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $photoId, $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        jsonResponse(['error' => '照片不存在或無權限'], 404);
+    }
+    
+    $photo = $result->fetch_assoc();
+    $imageUrl = $photo['image_url'];
+    $stmt->close();
+    
+    // 取得 Gemini API Key
+    $apiKey = getenv('GEMINI_API_KEY');
+    if (!$apiKey) {
+        jsonResponse(['error' => '未設定 Gemini API Key'], 500);
+    }
+    
+    // 讀取圖片內容並轉為 Base64
+    $imageData = '';
+    if (filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+        // 如果是外部 URL
+        $imageData = file_get_contents($imageUrl);
+    } else {
+        // 如果是本地檔案
+        $localPath = __DIR__ . '/' . $imageUrl;
+        if (file_exists($localPath)) {
+            $imageData = file_get_contents($localPath);
+        }
+    }
+    
+    if (!$imageData) {
+        jsonResponse(['error' => '無法讀取圖片'], 400);
+    }
+    
+    $base64Image = base64_encode($imageData);
+    $mimeType = 'image/jpeg'; // 預設，實際應偵測
+    
+    // 簡單偵測 MIME Type
+    if (strpos($imageUrl, '.png') !== false) $mimeType = 'image/png';
+    if (strpos($imageUrl, '.webp') !== false) $mimeType = 'image/webp';
+    
+    // 呼叫 Gemini API
+    $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}";
+    
+    $data = [
+        'contents' => [
+            [
+                'parts' => [
+                    ['text' => 'Analyze this photo to guess the age of the photographer/uploader. 
+                    Return a JSON object with two fields: 
+                    1. "age": A single precise age number followed by "歲" (e.g., "23歲"). Do NOT provide a range like "20-25歲".
+                    2. "reason": A detailed explanation (in Traditional Chinese) of why you guessed this age based on the photo\'s content, style, objects, lighting, and vibe. Be creative and specific.
+                    Return ONLY the JSON object, no markdown formatting.'],
+                    [
+                        'inline_data' => [
+                            'mime_type' => $mimeType,
+                            'data' => $base64Image
+                        ]
+                    ]
+                ]
+            ]
+        ]
+    ];
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    // curl_close($ch); // Deprecated in PHP 8.5+
+    
+    if ($httpCode !== 200) {
+        // Log error for debugging
+        error_log("Gemini API Error: HTTP $httpCode - Response: $response");
+        jsonResponse(['error' => 'AI 分析失敗', 'details' => json_decode($response, true) ?? $response], 500);
+    }
+    
+    $result = json_decode($response, true);
+    $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? '{}';
+    
+    // Clean up markdown code blocks if present
+    $text = str_replace(['```json', '```'], '', $text);
+    $jsonResult = json_decode($text, true);
+    
+    $age = $jsonResult['age'] ?? '未知';
+    $reason = $jsonResult['reason'] ?? '無法分析';
+
+    // Update database with analysis result
+    $updateStmt = $conn->prepare("UPDATE photos SET ai_analysis = ?, ai_explanation = ? WHERE id = ?");
+    $updateStmt->bind_param("ssi", $age, $reason, $photoId);
+    $updateStmt->execute();
+    $updateStmt->close();
+    
+    jsonResponse(['success' => true, 'age_analysis' => $age, 'ai_explanation' => $reason]);
+}
 // ==================== 好友功能實作 ====================
 
 function searchUsers($conn, $userId) {

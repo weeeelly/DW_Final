@@ -209,6 +209,11 @@ $conn->close();
                 <img id="viewPhotoImage" src="" alt="">
                 <div class="photo-details">
                     <p id="viewPhotoCaption"></p>
+                    <div id="viewPhotoAiResult" class="ai-result-section" style="display: none;">
+                        <h4>AI 年齡分析</h4>
+                        <p class="ai-age-badge">照片年齡：<span id="viewPhotoAge"></span></p>
+                        <p id="viewPhotoExplanation" class="ai-explanation"></p>
+                    </div>
                     <span class="photo-album" id="viewPhotoAlbum"></span>
                     <span class="photo-date" id="viewPhotoDate"></span>
                 </div>
