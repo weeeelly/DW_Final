@@ -35,8 +35,16 @@ function initEventListeners() {
     // 相簿表單提交
     document.getElementById('albumForm').addEventListener('submit', handleAlbumSubmit);
     
-    // 圖片網址預覽
-    document.getElementById('imageUrl').addEventListener('input', handleImagePreview);
+    // 圖片檔案選擇預覽
+    document.getElementById('imageFile').addEventListener('change', handleFileSelect);
+    
+    // 拖曳上傳
+    const fileWrapper = document.querySelector('.file-upload-wrapper');
+    if (fileWrapper) {
+        fileWrapper.addEventListener('dragover', handleDragOver);
+        fileWrapper.addEventListener('dragleave', handleDragLeave);
+        fileWrapper.addEventListener('drop', handleDrop);
+    }
     
     // Modal 關閉
     document.querySelectorAll('.modal-close, .modal-cancel, .modal-overlay').forEach(el => {
@@ -183,11 +191,19 @@ function openPhotoModal(photoId = null) {
     const form = document.getElementById('photoForm');
     
     form.reset();
-    document.getElementById('imagePreview').innerHTML = '<span class="preview-placeholder">輸入網址後預覽圖片</span>';
+    document.getElementById('imagePreview').innerHTML = '<span class="preview-placeholder">選擇圖片後預覽</span>';
+    document.getElementById('fileName').textContent = '';
+    
+    // 重置檔案輸入
+    const fileInput = document.getElementById('imageFile');
+    fileInput.value = '';
     
     if (photoId) {
         title.textContent = '編輯照片';
         document.getElementById('photoId').value = photoId;
+        
+        // 編輯時圖片不是必填（保留原圖）
+        fileInput.removeAttribute('required');
         
         // 從 DOM 取得照片資料
         const photoCard = document.querySelector(`[data-photo-id="${photoId}"]`);
@@ -196,11 +212,11 @@ function openPhotoModal(photoId = null) {
             const caption = photoCard.querySelector('.photo-card-caption').textContent;
             const albumName = photoCard.querySelector('.photo-card-album').textContent;
             
-            document.getElementById('imageUrl').value = img.src;
             document.getElementById('caption').value = caption !== '無描述' ? caption : '';
             
-            // 設定圖片預覽
+            // 顯示目前圖片預覽
             document.getElementById('imagePreview').innerHTML = `<img src="${img.src}" alt="">`;
+            document.getElementById('fileName').textContent = '（保留目前圖片，或選擇新圖片替換）';
             
             // 選擇相簿
             const albumSelect = document.getElementById('albumSelect');
@@ -214,6 +230,8 @@ function openPhotoModal(photoId = null) {
     } else {
         title.textContent = '新增照片';
         document.getElementById('photoId').value = '';
+        // 新增時圖片必填
+        fileInput.setAttribute('required', 'required');
         // 預設選擇 Recents
         document.getElementById('albumSelect').value = APP_DATA.defaultAlbumId;
     }
@@ -224,9 +242,24 @@ function openPhotoModal(photoId = null) {
 async function handlePhotoSubmit(e) {
     e.preventDefault();
     
-    const formData = new FormData(e.target);
+    const form = e.target;
+    const formData = new FormData(form);
     const photoId = formData.get('photo_id');
+    const fileInput = document.getElementById('imageFile');
+    
+    // 新增照片時必須有圖片
+    if (!photoId && (!fileInput.files || fileInput.files.length === 0)) {
+        showToast('請選擇要上傳的圖片', 'error');
+        return;
+    }
+    
     formData.append('action', photoId ? 'update_photo' : 'add_photo');
+    
+    // 顯示上傳中狀態
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = '上傳中...';
+    submitBtn.disabled = true;
     
     try {
         const response = await fetch('api.php', {
@@ -247,25 +280,78 @@ async function handlePhotoSubmit(e) {
     } catch (error) {
         console.error('操作失敗:', error);
         showToast('操作失敗', 'error');
+    } finally {
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
     }
 }
 
-function handleImagePreview(e) {
-    const url = e.target.value.trim();
+// 處理檔案選擇
+function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+        previewFile(file);
+    }
+}
+
+// 預覽選擇的檔案
+function previewFile(file) {
     const preview = document.getElementById('imagePreview');
+    const fileNameSpan = document.getElementById('fileName');
     
-    if (!url) {
-        preview.innerHTML = '<span class="preview-placeholder">輸入網址後預覽圖片</span>';
+    // 驗證檔案類型
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+        preview.innerHTML = '<span class="preview-placeholder">不支援的檔案格式</span>';
+        fileNameSpan.textContent = '';
+        showToast('請選擇 JPG、PNG、GIF 或 WebP 格式的圖片', 'error');
+        document.getElementById('imageFile').value = '';
         return;
     }
     
-    // 簡單驗證 URL
-    try {
-        new URL(url);
-        preview.innerHTML = `<img src="${escapeHtml(url)}" alt="預覽" 
-                                  onerror="this.parentElement.innerHTML='<span class=\\'preview-placeholder\\'>圖片載入失敗</span>'">`;
-    } catch {
-        preview.innerHTML = '<span class="preview-placeholder">無效的網址</span>';
+    // 驗證檔案大小 (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+        preview.innerHTML = '<span class="preview-placeholder">檔案太大</span>';
+        fileNameSpan.textContent = '';
+        showToast('檔案大小不能超過 10MB', 'error');
+        document.getElementById('imageFile').value = '';
+        return;
+    }
+    
+    // 顯示檔名
+    fileNameSpan.textContent = file.name;
+    
+    // 預覽圖片
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        preview.innerHTML = `<img src="${e.target.result}" alt="預覽">`;
+    };
+    reader.readAsDataURL(file);
+}
+
+// 拖曳上傳處理
+function handleDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove('drag-over');
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+        const fileInput = document.getElementById('imageFile');
+        fileInput.files = files;
+        previewFile(files[0]);
     }
 }
 

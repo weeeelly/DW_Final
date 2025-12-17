@@ -119,20 +119,26 @@ $conn->close();
                 <h3 id="photoModalTitle">新增照片</h3>
                 <button class="modal-close">&times;</button>
             </div>
-            <form id="photoForm">
+            <form id="photoForm" enctype="multipart/form-data">
                 <input type="hidden" id="photoId" name="photo_id">
                 
                 <div class="form-group">
-                    <label for="imageUrl">圖片網址</label>
-                    <input type="url" id="imageUrl" name="image_url" required 
-                           placeholder="貼上圖片連結（例如：https://...）">
-                    <small class="form-hint">支援 jpg, png, gif, webp 格式的圖片網址</small>
+                    <label for="imageFile">選擇圖片</label>
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="imageFile" name="image" accept="image/jpeg,image/png,image/gif,image/webp">
+                        <div class="file-upload-btn">
+                            <span class="file-upload-icon">📁</span>
+                            <span class="file-upload-text">點擊選擇圖片或拖曳檔案至此</span>
+                        </div>
+                        <span class="file-name" id="fileName"></span>
+                    </div>
+                    <small class="form-hint">支援 JPG、PNG、GIF、WebP 格式，最大 10MB</small>
                 </div>
                 
                 <div class="form-group">
-                    <label for="imagePreview">預覽</label>
+                    <label>預覽</label>
                     <div class="image-preview" id="imagePreview">
-                        <span class="preview-placeholder">輸入網址後預覽圖片</span>
+                        <span class="preview-placeholder">選擇圖片後預覽</span>
                     </div>
                 </div>
                 

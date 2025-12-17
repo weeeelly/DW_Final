@@ -93,17 +93,19 @@ function getPhotos($conn, $userId) {
 }
 
 function addPhoto($conn, $userId) {
-    $imageUrl = trim($_POST['image_url'] ?? '');
     $caption = trim($_POST['caption'] ?? '');
     $albumId = intval($_POST['album_id'] ?? 0);
     
-    // 驗證
-    if (empty($imageUrl)) {
-        jsonResponse(['error' => '請提供圖片網址'], 400);
+    // 處理檔案上傳
+    if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
+        jsonResponse(['error' => '請選擇要上傳的圖片'], 400);
     }
     
-    if (!filter_var($imageUrl, FILTER_VALIDATE_URL)) {
-        jsonResponse(['error' => '無效的圖片網址'], 400);
+    $file = $_FILES['image'];
+    $imageUrl = handleFileUpload($file, $userId);
+    
+    if (!$imageUrl) {
+        jsonResponse(['error' => '圖片上傳失敗'], 500);
     }
     
     // 驗證相簿是否屬於該使用者
@@ -142,19 +144,60 @@ function addPhoto($conn, $userId) {
     $stmt->close();
 }
 
+// 處理檔案上傳
+function handleFileUpload($file, $userId) {
+    // 允許的檔案類型
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    $maxSize = 10 * 1024 * 1024; // 10MB
+    
+    // 驗證檔案類型
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mimeType = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+    
+    if (!in_array($mimeType, $allowedTypes)) {
+        jsonResponse(['error' => '不支援的檔案格式，請上傳 JPG、PNG、GIF 或 WebP 圖片'], 400);
+    }
+    
+    // 驗證檔案大小
+    if ($file['size'] > $maxSize) {
+        jsonResponse(['error' => '檔案大小超過限制（最大 10MB）'], 400);
+    }
+    
+    // 建立使用者專屬目錄
+    $uploadDir = __DIR__ . '/uploads/' . $userId . '/';
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+    
+    // 生成唯一檔名
+    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $newFileName = uniqid('img_', true) . '.' . strtolower($extension);
+    $targetPath = $uploadDir . $newFileName;
+    
+    // 移動檔案
+    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+        return 'uploads/' . $userId . '/' . $newFileName;
+    }
+    
+    return false;
+}
+
 function updatePhoto($conn, $userId) {
     $photoId = intval($_POST['photo_id'] ?? 0);
     $caption = trim($_POST['caption'] ?? '');
     $albumId = intval($_POST['album_id'] ?? 0);
-    $imageUrl = trim($_POST['image_url'] ?? '');
     
-    // 驗證照片是否屬於該使用者
-    $stmt = $conn->prepare("SELECT id FROM photos WHERE id = ? AND user_id = ?");
+    // 驗證照片是否屬於該使用者，並取得舊圖片路徑
+    $stmt = $conn->prepare("SELECT id, image_url FROM photos WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $photoId, $userId);
     $stmt->execute();
-    if ($stmt->get_result()->num_rows === 0) {
+    $result = $stmt->get_result();
+    if ($result->num_rows === 0) {
         jsonResponse(['error' => '照片不存在或無權限'], 404);
     }
+    $oldPhoto = $result->fetch_assoc();
+    $oldImageUrl = $oldPhoto['image_url'];
     $stmt->close();
     
     // 驗證相簿是否屬於該使用者
@@ -165,6 +208,25 @@ function updatePhoto($conn, $userId) {
         jsonResponse(['error' => '無效的相簿'], 400);
     }
     $stmt->close();
+    
+    // 檢查是否有新圖片上傳
+    $imageUrl = $oldImageUrl;
+    if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+        $file = $_FILES['image'];
+        $newImageUrl = handleFileUpload($file, $userId);
+        
+        if ($newImageUrl) {
+            $imageUrl = $newImageUrl;
+            
+            // 刪除舊圖片（如果是本地檔案）
+            if (strpos($oldImageUrl, 'uploads/') === 0) {
+                $oldFilePath = __DIR__ . '/' . $oldImageUrl;
+                if (file_exists($oldFilePath)) {
+                    unlink($oldFilePath);
+                }
+            }
+        }
+    }
     
     // 更新照片
     $stmt = $conn->prepare("UPDATE photos SET caption = ?, album_id = ?, image_url = ? WHERE id = ? AND user_id = ?");
@@ -194,20 +256,31 @@ function updatePhoto($conn, $userId) {
 function deletePhoto($conn, $userId) {
     $photoId = intval($_POST['photo_id'] ?? 0);
     
-    // 驗證照片是否屬於該使用者
-    $stmt = $conn->prepare("SELECT id FROM photos WHERE id = ? AND user_id = ?");
+    // 驗證照片是否屬於該使用者，並取得圖片路徑
+    $stmt = $conn->prepare("SELECT id, image_url FROM photos WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $photoId, $userId);
     $stmt->execute();
-    if ($stmt->get_result()->num_rows === 0) {
+    $result = $stmt->get_result();
+    if ($result->num_rows === 0) {
         jsonResponse(['error' => '照片不存在或無權限'], 404);
     }
+    $photo = $result->fetch_assoc();
+    $imageUrl = $photo['image_url'];
     $stmt->close();
     
-    // 刪除照片
+    // 刪除照片記錄
     $stmt = $conn->prepare("DELETE FROM photos WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $photoId, $userId);
     
     if ($stmt->execute()) {
+        // 刪除本地圖片檔案
+        if (strpos($imageUrl, 'uploads/') === 0) {
+            $filePath = __DIR__ . '/' . $imageUrl;
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+        }
+        
         jsonResponse(['success' => true]);
     } else {
         jsonResponse(['error' => '刪除照片失敗'], 500);

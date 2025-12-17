@@ -48,7 +48,7 @@ CREATE TABLE photos (
 
 -- 測試使用者 (密碼皆為 "password123"，使用 password_hash 加密)
 INSERT INTO users (username, password) VALUES 
-('demo', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'),
+('willy', '$2y$10$BssL3HBGj.v6NjXU0O.IaOfYrn2DsQb1Q1.cNWfFudD5AReAX32ii'),
 ('testuser', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
 
 -- 為 demo 使用者建立相簿

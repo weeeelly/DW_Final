@@ -1,4 +1,3 @@
-# DW_Final
 # Simple Retro - 簡易照片日記
 
 一個使用 PHP、MySQL、HTML、CSS 和 JavaScript 製作的照片日記網站，模仿 Retro 的介面風格。
@@ -11,10 +10,13 @@
 - ✅ Session 管理與安全驗證
 
 ### 照片管理
-- ✅ 新增照片（支援圖片網址）
+- ✅ 從本地端上傳照片（支援拖曳上傳）
+- ✅ 支援 JPG、PNG、GIF、WebP 格式
+- ✅ 單檔最大 10MB
 - ✅ 編輯照片描述 (Caption)
 - ✅ 變更照片所屬相簿
-- ✅ 刪除照片
+- ✅ 更換照片（編輯時可選擇新圖片）
+- ✅ 刪除照片（自動清除本地檔案）
 - ✅ 照片預覽功能
 
 ### 相簿管理
@@ -30,6 +32,7 @@
 - ✅ Modal 彈窗操作
 - ✅ Toast 通知訊息
 - ✅ 圖片即時預覽
+- ✅ 拖曳上傳支援
 
 ## 🏗️ 系統架構
 
@@ -44,8 +47,10 @@ simple-retro/
 ├── style.css          # 樣式表
 ├── app.js             # 前端 JavaScript
 ├── database.sql       # 資料庫初始化腳本
-├── uploads/           # 上傳檔案目錄（預留）
-└── README.md          # 說明文件
+├── uploads/           # 上傳圖片目錄
+│   ├── .htaccess      # 安全設定（禁止執行 PHP）
+│   └── {user_id}/     # 各使用者的圖片目錄
+├── README.md          # 說明文件
 ```
 
 ## 🗃️ 資料庫設計
@@ -129,8 +134,8 @@ define('DB_NAME', 'simple_retro');
 | 動作 | 方法 | 參數 |
 |------|------|------|
 | get_photos | GET | album_id (可選) |
-| add_photo | POST | image_url, caption, album_id |
-| update_photo | POST | photo_id, image_url, caption, album_id |
+| add_photo | POST (multipart/form-data) | image (檔案), caption, album_id |
+| update_photo | POST (multipart/form-data) | photo_id, image (可選), caption, album_id |
 | delete_photo | POST | photo_id |
 
 ### 相簿相關
@@ -164,10 +169,13 @@ define('DB_NAME', 'simple_retro');
 
 ## ⚠️ 注意事項
 
-1. 本專案使用圖片網址方式儲存照片，未實作檔案上傳功能
-2. "Recents" 相簿為系統預設，不可刪除或重新命名
-3. 刪除相簿時，該相簿內的所有照片也會一併刪除
-4. 建議使用 Google Chrome 瀏覽器以獲得最佳體驗
+1. 請確保 `uploads/` 目錄有寫入權限（chmod 755 或 777）
+2. 支援 JPG、PNG、GIF、WebP 格式，單檔最大 10MB
+3. "Recents" 相簿為系統預設，不可刪除或重新命名
+4. 刪除相簿時，該相簿內的所有照片也會一併刪除
+5. 刪除照片時會自動清除伺服器上的圖片檔案
+6. 建議使用 Google Chrome 瀏覽器以獲得最佳體驗
+7. 測試資料中的圖片使用 Unsplash 外部連結，新上傳的照片會存放在 `uploads/` 目錄
 
 ## 📝 測試資料
 

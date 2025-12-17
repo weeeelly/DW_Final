@@ -689,6 +689,60 @@ a:hover {
     font-size: 0.9rem;
 }
 
+/* ==================== 檔案上傳 ==================== */
+.file-upload-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.file-upload-wrapper input[type="file"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.file-upload-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px 20px;
+    background: var(--surface-light);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+    text-align: center;
+}
+
+.file-upload-wrapper:hover .file-upload-btn,
+.file-upload-wrapper.drag-over .file-upload-btn {
+    border-color: var(--primary-color);
+    background: rgba(255, 107, 107, 0.1);
+}
+
+.file-upload-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.file-upload-text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.file-name {
+    display: block;
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: var(--secondary-color);
+    word-break: break-all;
+}
+
 /* ==================== 照片檢視器 ==================== */
 .photo-viewer {
     display: flex;
