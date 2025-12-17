@@ -67,6 +67,11 @@ function initEventListeners() {
         confirmDelete('photo', currentPhotoId);
     });
 
+    document.getElementById('imageEditFromView').addEventListener('click', () => {
+        closeModal('viewPhotoModal');
+        openImageEditor(currentPhotoId);
+    });
+
     // 確認刪除
     document.getElementById('confirmDeleteBtn').addEventListener('click', handleConfirmDelete);
 
@@ -81,6 +86,9 @@ function initEventListeners() {
     document.querySelectorAll('.delete-album-btn').forEach(btn => {
         btn.addEventListener('click', handleDeleteAlbumClick);
     });
+
+    // 圖片編輯器事件監聽
+    setupImageEditor();
 }
 
 // ==================== 照片功能 ====================
@@ -137,6 +145,7 @@ function renderPhotos(photos) {
                     <div class="photo-card-actions">
                         <button class="btn btn-sm btn-primary analyze-photo-btn" title="AI 測齡">AI 測齡</button>
                         <button class="btn btn-sm btn-secondary edit-photo-btn">編輯</button>
+                        <button class="btn btn-sm btn-secondary image-edit-btn">修圖</button>
                         <button class="btn btn-sm btn-danger delete-photo-btn">刪除</button>
                     </div>
                 </div>
@@ -168,6 +177,11 @@ function renderPhotos(photos) {
         card.querySelector('.delete-photo-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             confirmDelete('photo', photoId);
+        });
+
+        card.querySelector('.image-edit-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openImageEditor(photoId);
         });
 
         // 點擊卡片檢視詳細資訊
@@ -397,7 +411,22 @@ function previewFile(file) {
     // 預覽圖片
     const reader = new FileReader();
     reader.onload = (e) => {
-        preview.innerHTML = `<img src="${e.target.result}" alt="預覽">`;
+        // 完全清空預覽區域，移除任何美編後的樣式
+        preview.innerHTML = '';
+        
+        // 創建新的圖片元素
+        const newImg = document.createElement('img');
+        newImg.src = e.target.result;
+        newImg.alt = '預覽';
+        
+        // 添加到預覽區域
+        preview.appendChild(newImg);
+        
+        // 顯示美編按鈕
+        const designBtn = document.getElementById('openDesignBtn');
+        if (designBtn) {
+            designBtn.style.display = 'inline-block';
+        }
     };
     reader.readAsDataURL(file);
 }
@@ -647,4 +676,361 @@ function formatDate(dateStr) {
         month: '2-digit',
         day: '2-digit'
     });
+}
+
+// ==================== 圖片編輯器 ====================
+let imageEditor = {
+    currentPhotoId: null,
+    currentFilter: 'none',
+    currentAdjustments: {
+        brightness: 100,
+        contrast: 100,
+        saturation: 100
+    },
+    stickers: []
+};
+
+function setupImageEditor() {
+    // 標籤切換
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            switchEditorTab(e.target.dataset.tab);
+        });
+    });
+
+    // 濾鏡選擇
+    document.querySelectorAll('.filter-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            applyFilter(e.currentTarget.dataset.filter);
+        });
+    });
+
+    // 貼圖選擇
+    document.querySelectorAll('.sticker-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            selectSticker(e.target.dataset.sticker);
+        });
+    });
+
+    // 貼圖大小調整
+    const stickerSizeSlider = document.getElementById('stickerSize');
+    const stickerSizeValue = document.getElementById('stickerSizeValue');
+    stickerSizeSlider.addEventListener('input', (e) => {
+        stickerSizeValue.textContent = e.target.value + 'px';
+    });
+
+    // 調整控制項
+    setupAdjustmentControls();
+
+    // 重置按鈕
+    document.getElementById('resetAdjustments').addEventListener('click', resetAdjustments);
+
+    // 保存按鈕
+    document.getElementById('saveEditedImage').addEventListener('click', saveEditedImage);
+}
+
+function openImageEditor(photoId) {
+    const photoCard = document.querySelector(`[data-photo-id="${photoId}"]`);
+    if (!photoCard) return;
+
+    const img = photoCard.querySelector('img');
+    imageEditor.currentPhotoId = photoId;
+
+    // 載入圖片到編輯器
+    const editImage = document.getElementById('editImage');
+    editImage.src = img.src;
+    
+    // 重置編輯器狀態
+    resetEditor();
+    
+    openModal('imageEditModal');
+}
+
+function switchEditorTab(tabName) {
+    // 切換標籤樣式
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    
+    // 切換面板
+    document.querySelectorAll('.editor-panel').forEach(panel => {
+        panel.classList.remove('active');
+    });
+    document.getElementById(`${tabName}Panel`).classList.add('active');
+}
+
+function applyFilter(filterValue) {
+    imageEditor.currentFilter = filterValue;
+    updateImageDisplay();
+    
+    // 更新選中狀態
+    document.querySelectorAll('.filter-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    document.querySelector(`[data-filter="${filterValue}"]`).classList.add('selected');
+}
+
+function selectSticker(stickerEmoji) {
+    const stickerControls = document.querySelector('.sticker-controls');
+    stickerControls.style.display = 'block';
+    
+    // 顯示貼圖選擇器在圖片上
+    const overlay = document.getElementById('stickerOverlay');
+    const size = document.getElementById('stickerSize').value;
+    
+    const stickerElement = document.createElement('div');
+    stickerElement.className = 'placed-sticker';
+    stickerElement.textContent = stickerEmoji;
+    stickerElement.style.fontSize = size + 'px';
+    stickerElement.style.left = '50%';
+    stickerElement.style.top = '50%';
+    stickerElement.style.transform = 'translate(-50%, -50%)';
+    
+    // 使貼圖可拖曳
+    makeStickerDraggable(stickerElement);
+    
+    // 添加刪除功能
+    stickerElement.addEventListener('dblclick', () => {
+        stickerElement.remove();
+        updateStickers();
+    });
+    
+    overlay.appendChild(stickerElement);
+    updateStickers();
+}
+
+function makeStickerDraggable(element) {
+    let isDragging = false;
+    let currentX;
+    let currentY;
+    let initialX;
+    let initialY;
+    let xOffset = 0;
+    let yOffset = 0;
+
+    element.addEventListener('mousedown', dragStart);
+    element.addEventListener('touchstart', dragStart);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('touchmove', drag);
+    document.addEventListener('mouseup', dragEnd);
+    document.addEventListener('touchend', dragEnd);
+
+    function dragStart(e) {
+        if (e.type === 'touchstart') {
+            initialX = e.touches[0].clientX - xOffset;
+            initialY = e.touches[0].clientY - yOffset;
+        } else {
+            initialX = e.clientX - xOffset;
+            initialY = e.clientY - yOffset;
+        }
+
+        if (e.target === element) {
+            isDragging = true;
+        }
+    }
+
+    function drag(e) {
+        if (isDragging) {
+            e.preventDefault();
+            
+            if (e.type === 'touchmove') {
+                currentX = e.touches[0].clientX - initialX;
+                currentY = e.touches[0].clientY - initialY;
+            } else {
+                currentX = e.clientX - initialX;
+                currentY = e.clientY - initialY;
+            }
+
+            xOffset = currentX;
+            yOffset = currentY;
+
+            element.style.transform = `translate(${currentX}px, ${currentY}px)`;
+        }
+    }
+
+    function dragEnd() {
+        initialX = currentX;
+        initialY = currentY;
+        isDragging = false;
+    }
+}
+
+function setupAdjustmentControls() {
+    const brightnessSlider = document.getElementById('brightnessSlider');
+    const contrastSlider = document.getElementById('contrastSlider');
+    const saturationSlider = document.getElementById('saturationSlider');
+    
+    const brightnessValue = document.getElementById('brightnessValue');
+    const contrastValue = document.getElementById('contrastValue');
+    const saturationValue = document.getElementById('saturationValue');
+
+    brightnessSlider.addEventListener('input', (e) => {
+        imageEditor.currentAdjustments.brightness = e.target.value;
+        brightnessValue.textContent = e.target.value + '%';
+        updateImageDisplay();
+    });
+
+    contrastSlider.addEventListener('input', (e) => {
+        imageEditor.currentAdjustments.contrast = e.target.value;
+        contrastValue.textContent = e.target.value + '%';
+        updateImageDisplay();
+    });
+
+    saturationSlider.addEventListener('input', (e) => {
+        imageEditor.currentAdjustments.saturation = e.target.value;
+        saturationValue.textContent = e.target.value + '%';
+        updateImageDisplay();
+    });
+}
+
+function updateImageDisplay() {
+    const editImage = document.getElementById('editImage');
+    const { brightness, contrast, saturation } = imageEditor.currentAdjustments;
+    
+    let filter = '';
+    if (imageEditor.currentFilter !== 'none') {
+        filter += imageEditor.currentFilter + ' ';
+    }
+    
+    filter += `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
+    editImage.style.filter = filter;
+}
+
+function updateStickers() {
+    const stickers = document.querySelectorAll('.placed-sticker');
+    imageEditor.stickers = Array.from(stickers).map(sticker => ({
+        emoji: sticker.textContent,
+        x: sticker.style.left || '50%',
+        y: sticker.style.top || '50%',
+        transform: sticker.style.transform,
+        fontSize: sticker.style.fontSize
+    }));
+}
+
+function resetEditor() {
+    imageEditor.currentFilter = 'none';
+    imageEditor.currentAdjustments = {
+        brightness: 100,
+        contrast: 100,
+        saturation: 100
+    };
+    imageEditor.stickers = [];
+    
+    // 重置 UI
+    document.getElementById('stickerOverlay').innerHTML = '';
+    document.querySelector('.sticker-controls').style.display = 'none';
+    
+    // 重置滑桿
+    document.getElementById('brightnessSlider').value = 100;
+    document.getElementById('contrastSlider').value = 100;
+    document.getElementById('saturationSlider').value = 100;
+    document.getElementById('brightnessValue').textContent = '100%';
+    document.getElementById('contrastValue').textContent = '100%';
+    document.getElementById('saturationValue').textContent = '100%';
+    
+    // 重置濾鏡選擇
+    document.querySelectorAll('.filter-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    document.querySelector('[data-filter="none"]').classList.add('selected');
+    
+    updateImageDisplay();
+}
+
+function resetAdjustments() {
+    imageEditor.currentAdjustments = {
+        brightness: 100,
+        contrast: 100,
+        saturation: 100
+    };
+    
+    document.getElementById('brightnessSlider').value = 100;
+    document.getElementById('contrastSlider').value = 100;
+    document.getElementById('saturationSlider').value = 100;
+    document.getElementById('brightnessValue').textContent = '100%';
+    document.getElementById('contrastValue').textContent = '100%';
+    document.getElementById('saturationValue').textContent = '100%';
+    
+    updateImageDisplay();
+}
+
+async function saveEditedImage() {
+    const photoId = imageEditor.currentPhotoId;
+    
+    if (!photoId) return;
+
+    const saveBtn = document.getElementById('saveEditedImage');
+    const originalText = saveBtn.textContent;
+    saveBtn.textContent = '保存中...';
+    saveBtn.disabled = true;
+
+    try {
+        // 創建 canvas 來合成最終圖片
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const editImage = document.getElementById('editImage');
+        
+        // 設置 canvas 尺寸
+        canvas.width = editImage.naturalWidth;
+        canvas.height = editImage.naturalHeight;
+        
+        // 繪製原始圖片
+        ctx.filter = editImage.style.filter || 'none';
+        ctx.drawImage(editImage, 0, 0, canvas.width, canvas.height);
+        
+        // 添加貼圖
+        const stickers = document.querySelectorAll('.placed-sticker');
+        stickers.forEach(sticker => {
+            const rect = editImage.getBoundingClientRect();
+            const stickerRect = sticker.getBoundingClientRect();
+            
+            // 計算貼圖在圖片上的相對位置
+            const x = ((stickerRect.left + stickerRect.width / 2 - rect.left) / rect.width) * canvas.width;
+            const y = ((stickerRect.top + stickerRect.height / 2 - rect.top) / rect.height) * canvas.height;
+            const fontSize = parseInt(sticker.style.fontSize) * (canvas.width / rect.width);
+            
+            ctx.filter = 'none'; // 貼圖不套用濾鏡
+            ctx.font = `${fontSize}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(sticker.textContent, x, y);
+        });
+        
+        // 將 canvas 轉換為 Blob
+        const blob = await new Promise(resolve => {
+            canvas.toBlob(resolve, 'image/jpeg', 0.9);
+        });
+
+        // 準備表單數據
+        const formData = new FormData();
+        formData.append('action', 'update_edited_image');
+        formData.append('photo_id', photoId);
+        formData.append('edited_image', blob, 'edited.jpg');
+
+        const response = await fetch('api.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            showToast(data.error, 'error');
+            return;
+        }
+
+        showToast('修圖已保存', 'success');
+        closeModal('imageEditModal');
+        
+        // 重新載入照片以顯示更新
+        loadPhotos(currentAlbumId);
+        
+    } catch (error) {
+        console.error('保存修圖失敗:', error);
+        showToast('保存失敗', 'error');
+    } finally {
+        saveBtn.textContent = originalText;
+        saveBtn.disabled = false;
+    }
 }

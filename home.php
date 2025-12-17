@@ -219,6 +219,7 @@ $conn->close();
                 </div>
                 <div class="photo-viewer-actions">
                     <button class="btn btn-secondary" id="editPhotoFromView">編輯</button>
+                    <button class="btn btn-secondary" id="imageEditFromView">修圖</button>
                     <button class="btn btn-danger" id="deletePhotoFromView">刪除</button>
                 </div>
             </div>
@@ -243,6 +244,122 @@ $conn->close();
         </div>
     </div>
     
+    <!-- 圖片編輯 Modal -->
+    <div class="modal" id="imageEditModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-xl">
+            <div class="modal-header">
+                <h3>圖片編輯器</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="image-editor">
+                <div class="editor-toolbar">
+                    <div class="editor-tabs">
+                        <button class="tab-btn active" data-tab="filters">濾鏡</button>
+                        <button class="tab-btn" data-tab="stickers">貼圖</button>
+                        <button class="tab-btn" data-tab="adjust">調整</button>
+                    </div>
+                </div>
+                
+                <!-- 濾鏡面板 -->
+                <div class="editor-panel active" id="filtersPanel">
+                    <h4>選擇濾鏡效果</h4>
+                    <div class="filter-grid">
+                        <div class="filter-item" data-filter="none">
+                            <div class="filter-preview" style="background-image: url();"></div>
+                            <span>原圖</span>
+                        </div>
+                        <div class="filter-item" data-filter="grayscale(100%)">
+                            <div class="filter-preview grayscale"></div>
+                            <span>黑白</span>
+                        </div>
+                        <div class="filter-item" data-filter="sepia(100%)">
+                            <div class="filter-preview sepia"></div>
+                            <span>復古</span>
+                        </div>
+                        <div class="filter-item" data-filter="blur(2px)">
+                            <div class="filter-preview blur"></div>
+                            <span>模糊</span>
+                        </div>
+                        <div class="filter-item" data-filter="brightness(1.3) contrast(1.2)">
+                            <div class="filter-preview bright"></div>
+                            <span>鮮豔</span>
+                        </div>
+                        <div class="filter-item" data-filter="hue-rotate(90deg)">
+                            <div class="filter-preview hue"></div>
+                            <span>色調</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 貼圖面板 -->
+                <div class="editor-panel" id="stickersPanel">
+                    <h4>選擇貼圖</h4>
+                    <div class="sticker-grid">
+                        <div class="sticker-category">
+                            <h5>表情</h5>
+                            <div class="sticker-list">
+                                <span class="sticker-item" data-sticker="😍">😍</span>
+                                <span class="sticker-item" data-sticker="🥰">🥰</span>
+                                <span class="sticker-item" data-sticker="😎">😎</span>
+                                <span class="sticker-item" data-sticker="🤩">🤩</span>
+                                <span class="sticker-item" data-sticker="😘">😘</span>
+                                <span class="sticker-item" data-sticker="🔥">🔥</span>
+                            </div>
+                        </div>
+                        <div class="sticker-category">
+                            <h5>裝飾</h5>
+                            <div class="sticker-list">
+                                <span class="sticker-item" data-sticker="⭐">⭐</span>
+                                <span class="sticker-item" data-sticker="💖">💖</span>
+                                <span class="sticker-item" data-sticker="🌟">🌟</span>
+                                <span class="sticker-item" data-sticker="✨">✨</span>
+                                <span class="sticker-item" data-sticker="💫">💫</span>
+                                <span class="sticker-item" data-sticker="🎉">🎉</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sticker-controls" style="display: none;">
+                        <label>大小：</label>
+                        <input type="range" id="stickerSize" min="20" max="80" value="40">
+                        <span id="stickerSizeValue">40px</span>
+                    </div>
+                </div>
+                
+                <!-- 調整面板 -->
+                <div class="editor-panel" id="adjustPanel">
+                    <h4>調整圖片</h4>
+                    <div class="adjust-controls">
+                        <div class="control-group">
+                            <label>亮度：<span id="brightnessValue">100%</span></label>
+                            <input type="range" id="brightnessSlider" min="50" max="200" value="100">
+                        </div>
+                        <div class="control-group">
+                            <label>對比度：<span id="contrastValue">100%</span></label>
+                            <input type="range" id="contrastSlider" min="50" max="200" value="100">
+                        </div>
+                        <div class="control-group">
+                            <label>飽和度：<span id="saturationValue">100%</span></label>
+                            <input type="range" id="saturationSlider" min="0" max="200" value="100">
+                        </div>
+                    </div>
+                    <div class="adjust-actions">
+                        <button class="btn btn-secondary" id="resetAdjustments">重置調整</button>
+                    </div>
+                </div>
+                
+                <div class="image-container">
+                    <img id="editImage" src="" alt="">
+                    <div id="stickerOverlay"></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">取消</button>
+                    <button type="button" class="btn btn-primary" id="saveEditedImage">保存修圖</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast 通知 -->
     <div class="toast-container" id="toastContainer"></div>
     

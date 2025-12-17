@@ -1524,3 +1524,313 @@ a:hover {
     }
 }
 
+/* ==================== 圖片編輯器 ==================== */
+.modal-xl {
+    max-width: 1000px;
+}
+
+.image-editor {
+    padding: 20px;
+}
+
+.editor-toolbar {
+    margin-bottom: 20px;
+}
+
+.editor-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface-light);
+    padding: 4px;
+    border-radius: var(--radius-sm);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 8px 16px;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 0.9rem;
+}
+
+.tab-btn.active {
+    background: var(--primary-color);
+    color: white;
+}
+
+.tab-btn:hover:not(.active) {
+    background: var(--border-color);
+    color: var(--text-primary);
+}
+
+.editor-panel {
+    display: none;
+    padding: 20px;
+    background: var(--surface-light);
+    border-radius: var(--radius-sm);
+    margin-bottom: 20px;
+}
+
+.editor-panel.active {
+    display: block;
+}
+
+.editor-panel h4 {
+    margin-bottom: 15px;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+/* 濾鏡面板 */
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 12px;
+}
+
+.filter-item {
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    border: 2px solid transparent;
+}
+
+.filter-item:hover,
+.filter-item.selected {
+    border-color: var(--primary-color);
+    background: rgba(255, 107, 107, 0.1);
+}
+
+.filter-preview {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+    border-radius: var(--radius-sm);
+    margin: 0 auto 8px;
+}
+
+.filter-preview.grayscale { filter: grayscale(100%); }
+.filter-preview.sepia { filter: sepia(100%); }
+.filter-preview.blur { filter: blur(2px); }
+.filter-preview.bright { filter: brightness(1.3) contrast(1.2); }
+.filter-preview.hue { filter: hue-rotate(90deg); }
+
+.filter-item span {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* 貼圖面板 */
+.sticker-category {
+    margin-bottom: 20px;
+}
+
+.sticker-category h5 {
+    margin-bottom: 10px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.sticker-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.sticker-item {
+    font-size: 2rem;
+    padding: 8px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+    user-select: none;
+}
+
+.sticker-item:hover {
+    background: var(--border-color);
+    transform: scale(1.1);
+}
+
+.sticker-controls {
+    margin-top: 20px;
+    padding: 15px;
+    background: var(--background-color);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.sticker-controls label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.sticker-controls input[type="range"] {
+    flex: 1;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border-color);
+    outline: none;
+    cursor: pointer;
+}
+
+.sticker-controls input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+}
+
+.sticker-controls input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    border: none;
+}
+
+#stickerSizeValue {
+    min-width: 35px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* 調整面板 */
+.adjust-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.control-group label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.control-group input[type="range"] {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--border-color);
+    outline: none;
+    cursor: pointer;
+}
+
+.control-group input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+}
+
+.control-group input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    cursor: pointer;
+    border: none;
+}
+
+.adjust-actions {
+    margin-top: 15px;
+}
+
+/* 圖片容器 */
+.image-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--surface-light);
+    border-radius: var(--radius-sm);
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border-color);
+}
+
+#editImage {
+    max-width: 100%;
+    max-height: 500px;
+    border-radius: var(--radius-sm);
+}
+
+#stickerOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.placed-sticker {
+    position: absolute;
+    cursor: move;
+    user-select: none;
+    pointer-events: all;
+    z-index: 10;
+    text-shadow: 0 0 4px rgba(0,0,0,0.3);
+}
+
+.placed-sticker:hover {
+    filter: drop-shadow(0 0 8px rgba(255, 107, 107, 0.8));
+}
+
+/* 響應式調整 */
+@media (max-width: 768px) {
+    .modal-xl {
+        max-width: 95%;
+    }
+    
+    .filter-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+    
+    .filter-preview {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .sticker-item {
+        font-size: 1.5rem;
+        padding: 6px;
+    }
+    
+    .sticker-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    
+    .image-container {
+        padding: 10px;
+    }
+    
+    #editImage {
+        max-height: 300px;
+    }
+}
+

@@ -32,6 +32,10 @@ switch ($action) {
     case 'analyze_photo':
         analyzePhoto($conn, $userId);
         break;
+
+    case 'update_edited_image':
+        updateEditedImage($conn, $userId);
+        break;
     
     // ==================== 相簿相關 ====================
     
@@ -602,6 +606,85 @@ function analyzePhoto($conn, $userId) {
     
     jsonResponse(['success' => true, 'age_analysis' => $age, 'ai_explanation' => $reason]);
 }
+
+function updateEditedImage($conn, $userId) {
+    $photoId = intval($_POST['photo_id'] ?? 0);
+    
+    // 驗證照片是否屬於該使用者，並取得舊圖片路徑
+    $stmt = $conn->prepare("SELECT id, image_url FROM photos WHERE id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $photoId, $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows === 0) {
+        jsonResponse(['error' => '照片不存在或無權限'], 404);
+    }
+    $oldPhoto = $result->fetch_assoc();
+    $oldImageUrl = $oldPhoto['image_url'];
+    $stmt->close();
+    
+    // 檢查是否有編輯後的圖片
+    if (!isset($_FILES['edited_image']) || $_FILES['edited_image']['error'] !== UPLOAD_ERR_OK) {
+        jsonResponse(['error' => '沒有收到編輯後的圖片'], 400);
+    }
+    
+    $file = $_FILES['edited_image'];
+    
+    // 驗證檔案類型
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mimeType = finfo_file($finfo, $file['tmp_name']);
+    finfo_close($finfo);
+    
+    if (!in_array($mimeType, $allowedTypes)) {
+        jsonResponse(['error' => '不支援的檔案類型'], 400);
+    }
+    
+    // 驗證檔案大小 (10MB)
+    if ($file['size'] > 10 * 1024 * 1024) {
+        jsonResponse(['error' => '檔案大小不能超過 10MB'], 400);
+    }
+    
+    // 創建使用者上傳目錄
+    $uploadDir = __DIR__ . "/uploads/{$userId}";
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+    
+    // 生成唯一檔名 (保持編輯標記)
+    $extension = 'jpg'; // 統一使用 jpg
+    $timestamp = time();
+    $random = bin2hex(random_bytes(8));
+    $newFileName = "edited_{$timestamp}_{$random}.{$extension}";
+    $newFilePath = "{$uploadDir}/{$newFileName}";
+    
+    // 移動檔案
+    if (!move_uploaded_file($file['tmp_name'], $newFilePath)) {
+        jsonResponse(['error' => '檔案上傳失敗'], 500);
+    }
+    
+    $newImageUrl = "uploads/{$userId}/{$newFileName}";
+    
+    // 更新資料庫
+    $stmt = $conn->prepare("UPDATE photos SET image_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?");
+    $stmt->bind_param("sii", $newImageUrl, $photoId, $userId);
+    
+    if ($stmt->execute()) {
+        // 刪除舊圖片檔案（如果是本地檔案且不同）
+        if (strpos($oldImageUrl, 'uploads/') === 0 && $oldImageUrl !== $newImageUrl) {
+            $oldFilePath = __DIR__ . '/' . $oldImageUrl;
+            if (file_exists($oldFilePath)) {
+                unlink($oldFilePath);
+            }
+        }
+        
+        jsonResponse(['success' => true, 'image_url' => $newImageUrl]);
+    } else {
+        jsonResponse(['error' => '更新照片失敗'], 500);
+    }
+    
+    $stmt->close();
+}
+
 // ==================== 好友功能實作 ====================
 
 function searchUsers($conn, $userId) {
