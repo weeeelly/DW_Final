@@ -55,6 +55,13 @@ $conn->close();
             
             <nav class="sidebar-nav">
                 <div class="nav-section">
+                    <ul class="nav-links">
+                        <li><a href="profile.php" class="nav-link-item">👤 我的主頁</a></li>
+                        <li><a href="friends.php" class="nav-link-item">👥 好友</a></li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
                     <h3>相簿</h3>
                     <ul class="album-list" id="albumList">
                         <?php foreach ($albums as $album): ?>

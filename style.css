@@ -330,6 +330,28 @@ a:hover {
     margin-bottom: 12px;
 }
 
+.nav-links {
+    list-style: none;
+    margin-bottom: 20px;
+}
+
+.nav-link-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: var(--transition);
+    margin-bottom: 4px;
+}
+
+.nav-link-item:hover {
+    background: var(--surface-light);
+    color: var(--primary-color);
+}
+
 .album-list {
     list-style: none;
     margin-bottom: 16px;
@@ -916,4 +938,546 @@ a:hover {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--text-muted);
+}
+
+/* ==================== 個人檔案頁面 ==================== */
+.profile-page {
+    min-height: 100vh;
+    background: var(--background-color);
+}
+
+.profile-header-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    background: var(--surface-color);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.profile-header-nav .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+}
+
+.back-btn {
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.nav-link {
+    color: var(--text-secondary);
+}
+
+.nav-link:hover {
+    color: var(--primary-color);
+}
+
+.profile-hero {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    padding: 60px 40px;
+    background: linear-gradient(135deg, var(--surface-color) 0%, var(--surface-light) 100%);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.profile-avatar {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    font-weight: 700;
+    color: white;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-info h1 {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+.profile-bio {
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    font-size: 1.1rem;
+}
+
+.profile-stats {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 20px;
+}
+
+.stat {
+    text-align: center;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.stat-label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.profile-content {
+    padding: 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.profile-content h2 {
+    margin-bottom: 24px;
+    font-size: 1.3rem;
+}
+
+/* ==================== 好友頁面 ==================== */
+.friends-page {
+    min-height: 100vh;
+    background: var(--background-color);
+}
+
+.friends-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.search-section,
+.requests-section,
+.friends-section {
+    background: var(--surface-color);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-color);
+}
+
+.search-section h2,
+.requests-section h2,
+.friends-section h2 {
+    margin-bottom: 20px;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.badge {
+    background: var(--primary-color);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.search-box {
+    display: flex;
+    gap: 12px;
+}
+
+.search-box input {
+    flex: 1;
+    padding: 12px 16px;
+    background: var(--surface-light);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 1rem;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.search-results,
+.requests-list,
+.friends-list {
+    margin-top: 16px;
+}
+
+.user-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    background: var(--surface-light);
+    border-radius: var(--radius-sm);
+    margin-bottom: 12px;
+    transition: var(--transition);
+}
+
+.user-card:hover {
+    background: var(--border-color);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-decoration: none;
+    color: inherit;
+    flex: 1;
+}
+
+.user-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: white;
+    font-size: 1.2rem;
+}
+
+.user-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.user-bio {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.user-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.relation-badge {
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+}
+
+.relation-badge.friend {
+    background: rgba(46, 213, 115, 0.2);
+    color: var(--success-color);
+}
+
+.relation-badge.pending {
+    background: rgba(255, 165, 2, 0.2);
+    color: var(--warning-color);
+}
+
+.empty-text {
+    color: var(--text-muted);
+    text-align: center;
+    padding: 20px;
+}
+
+/* ==================== 照片詳細檢視 ==================== */
+.photo-detail-view {
+    display: flex;
+    max-height: 80vh;
+}
+
+.photo-detail-image {
+    flex: 1;
+    background: var(--background-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 60%;
+}
+
+.photo-detail-image img {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+}
+
+.photo-detail-sidebar {
+    width: 340px;
+    display: flex;
+    flex-direction: column;
+    border-left: 1px solid var(--border-color);
+}
+
+.photo-detail-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.photo-author {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.author-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: white;
+}
+
+.author-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.author-name {
+    font-weight: 600;
+}
+
+.photo-date {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.photo-detail-caption {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.photo-detail-actions {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.like-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    transition: var(--transition);
+}
+
+.like-btn:hover {
+    background: var(--surface-light);
+}
+
+.like-btn.liked {
+    color: var(--error-color);
+}
+
+.like-btn.liked .like-icon {
+    color: var(--error-color);
+}
+
+/* ==================== 留言區 ==================== */
+.photo-detail-comments {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.photo-detail-comments h4 {
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.comments-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.no-comments {
+    color: var(--text-muted);
+    text-align: center;
+    padding: 20px;
+}
+
+.comment-item {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    position: relative;
+}
+
+.comment-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: white;
+    flex-shrink: 0;
+}
+
+.comment-content {
+    flex: 1;
+    background: var(--surface-light);
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+}
+
+.comment-author {
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-right: 8px;
+}
+
+.comment-content p {
+    margin: 4px 0;
+    font-size: 0.95rem;
+    word-break: break-word;
+}
+
+.comment-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.delete-comment-btn {
+    position: absolute;
+    right: 0;
+    top: 0;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 4px 8px;
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.comment-item:hover .delete-comment-btn {
+    opacity: 1;
+}
+
+.delete-comment-btn:hover {
+    color: var(--error-color);
+}
+
+.comment-form {
+    display: flex;
+    gap: 8px;
+    padding: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.comment-form input {
+    flex: 1;
+    padding: 10px 14px;
+    background: var(--surface-light);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.comment-form input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+/* ==================== 照片卡片統計 ==================== */
+.photo-card-stats {
+    display: flex;
+    gap: 16px;
+    color: white;
+    font-size: 0.9rem;
+}
+
+/* ==================== 響應式 - 個人檔案 ==================== */
+@media (max-width: 768px) {
+    .profile-hero {
+        flex-direction: column;
+        text-align: center;
+        padding: 40px 20px;
+        gap: 24px;
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        font-size: 3rem;
+    }
+    
+    .profile-stats {
+        justify-content: center;
+    }
+    
+    .profile-actions {
+        justify-content: center;
+    }
+    
+    .profile-content {
+        padding: 20px;
+    }
+    
+    .photo-detail-view {
+        flex-direction: column;
+        max-height: none;
+    }
+    
+    .photo-detail-image {
+        max-width: 100%;
+    }
+    
+    .photo-detail-sidebar {
+        width: 100%;
+    }
+    
+    .user-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .user-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
 }

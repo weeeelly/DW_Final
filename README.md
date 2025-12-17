@@ -25,6 +25,16 @@
 - ✅ 刪除相簿（連同所有照片）
 - ✅ "Recents" 預設相簿保護（不可修改/刪除）
 
+### 社交功能
+- ✅ 搜尋使用者
+- ✅ 發送/接受/拒絕好友請求
+- ✅ 好友列表管理
+- ✅ 移除好友
+- ✅ 查看好友的個人主頁與照片牆
+- ✅ 對照片按讚 ❤️
+- ✅ 對照片留言 💬
+- ✅ 刪除自己的留言
+
 ### UI/UX
 - ✅ 深色主題 Retro 風格設計
 - ✅ 響應式設計（支援手機/平板/桌面）
@@ -41,6 +51,8 @@ simple-retro/
 ├── index.php          # 登入頁面（首頁）
 ├── register.php       # 註冊頁面
 ├── home.php           # 主頁面（照片日記）
+├── profile.php        # 個人主頁（查看照片、按讚、留言）
+├── friends.php        # 好友管理頁面
 ├── logout.php         # 登出處理
 ├── api.php            # API 端點（處理 AJAX 請求）
 ├── config.php         # 資料庫設定與共用函數
@@ -61,6 +73,8 @@ simple-retro/
 | id | INT | 主鍵，自動遞增 |
 | username | VARCHAR(50) | 使用者名稱，唯一 |
 | password | VARCHAR(255) | 密碼（bcrypt 加密）|
+| avatar | VARCHAR(500) | 頭像圖片網址 |
+| bio | TEXT | 個人簡介 |
 | created_at | TIMESTAMP | 建立時間 |
 
 ### albums 資料表
@@ -80,8 +94,35 @@ simple-retro/
 | album_id | INT | 外鍵，關聯 albums |
 | image_url | VARCHAR(500) | 圖片網址 |
 | caption | TEXT | 照片描述 |
+| is_public | BOOLEAN | 是否公開 |
 | created_at | TIMESTAMP | 建立時間 |
 | updated_at | TIMESTAMP | 更新時間 |
+
+### friendships 資料表
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| id | INT | 主鍵，自動遞增 |
+| user_id | INT | 發送請求的使用者 |
+| friend_id | INT | 接收請求的使用者 |
+| status | ENUM | pending/accepted/rejected |
+| created_at | TIMESTAMP | 建立時間 |
+
+### likes 資料表
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| id | INT | 主鍵，自動遞增 |
+| user_id | INT | 按讚的使用者 |
+| photo_id | INT | 被按讚的照片 |
+| created_at | TIMESTAMP | 建立時間 |
+
+### comments 資料表
+| 欄位 | 類型 | 說明 |
+|------|------|------|
+| id | INT | 主鍵，自動遞增 |
+| user_id | INT | 留言的使用者 |
+| photo_id | INT | 留言的照片 |
+| content | TEXT | 留言內容 |
+| created_at | TIMESTAMP | 建立時間 |
 
 ### ER Diagram
 ```
@@ -89,6 +130,12 @@ users (1) ──────< (N) albums
   │                    │
   │                    │
   └──< (N) photos >────┘
+       │      │
+       │      └──< (N) comments
+       │
+       └──< (N) likes
+
+users (N) ──< friendships >── (N) users
 ```
 
 ## 🚀 安裝與設定
@@ -121,10 +168,12 @@ define('DB_NAME', 'simple_retro');
 
 ## 👤 測試帳號
 
-| 帳號 | 密碼 |
-|------|------|
-| demo | password123 |
-| testuser | password123 |
+| 帳號 | 密碼 | 說明 |
+|------|------|------|
+| demo | password123 | 有多張照片，與 testuser、alice 是好友 |
+| testuser | password123 | 有照片，與 demo 是好友 |
+| alice | password123 | 有照片，與 demo 是好友 |
+| bob | password123 | 有照片，已向 demo 發送好友請求 |
 
 ## 📡 API 端點
 
@@ -134,6 +183,7 @@ define('DB_NAME', 'simple_retro');
 | 動作 | 方法 | 參數 |
 |------|------|------|
 | get_photos | GET | album_id (可選) |
+| get_user_photos | GET | user_id |
 | add_photo | POST (multipart/form-data) | image (檔案), caption, album_id |
 | update_photo | POST (multipart/form-data) | photo_id, image (可選), caption, album_id |
 | delete_photo | POST | photo_id |
@@ -145,6 +195,31 @@ define('DB_NAME', 'simple_retro');
 | add_album | POST | album_name |
 | update_album | POST | album_id, album_name |
 | delete_album | POST | album_id |
+
+### 好友相關
+| 動作 | 方法 | 參數 |
+|------|------|------|
+| search_users | GET | query |
+| get_friends | GET | - |
+| get_friend_requests | GET | - |
+| get_user_profile | GET | user_id |
+| send_friend_request | POST | friend_id |
+| accept_friend_request | POST | friend_id |
+| reject_friend_request | POST | friend_id |
+| remove_friend | POST | friend_id |
+
+### 按讚相關
+| 動作 | 方法 | 參數 |
+|------|------|------|
+| toggle_like | POST | photo_id |
+| get_likes | GET | photo_id |
+
+### 留言相關
+| 動作 | 方法 | 參數 |
+|------|------|------|
+| get_comments | GET | photo_id |
+| add_comment | POST | photo_id, content |
+| delete_comment | POST | comment_id |
 
 ## 🔒 安全機制
 

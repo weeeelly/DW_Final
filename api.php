@@ -46,6 +46,68 @@ switch ($action) {
     case 'delete_album':
         deleteAlbum($conn, $userId);
         break;
+    
+    // ==================== 好友相關 ====================
+    
+    case 'search_users':
+        searchUsers($conn, $userId);
+        break;
+        
+    case 'get_friends':
+        getFriends($conn, $userId);
+        break;
+        
+    case 'get_friend_requests':
+        getFriendRequests($conn, $userId);
+        break;
+        
+    case 'send_friend_request':
+        sendFriendRequest($conn, $userId);
+        break;
+        
+    case 'accept_friend_request':
+        acceptFriendRequest($conn, $userId);
+        break;
+        
+    case 'reject_friend_request':
+        rejectFriendRequest($conn, $userId);
+        break;
+        
+    case 'remove_friend':
+        removeFriend($conn, $userId);
+        break;
+        
+    case 'get_user_profile':
+        getUserProfile($conn, $userId);
+        break;
+        
+    case 'get_user_photos':
+        getUserPhotos($conn, $userId);
+        break;
+    
+    // ==================== 按讚相關 ====================
+    
+    case 'toggle_like':
+        toggleLike($conn, $userId);
+        break;
+        
+    case 'get_likes':
+        getLikes($conn, $userId);
+        break;
+    
+    // ==================== 留言相關 ====================
+    
+    case 'get_comments':
+        getComments($conn, $userId);
+        break;
+        
+    case 'add_comment':
+        addComment($conn, $userId);
+        break;
+        
+    case 'delete_comment':
+        deleteComment($conn, $userId);
+        break;
         
     default:
         jsonResponse(['error' => '無效的操作'], 400);
@@ -427,6 +489,522 @@ function deleteAlbum($conn, $userId) {
         jsonResponse(['success' => true]);
     } else {
         jsonResponse(['error' => '刪除相簿失敗'], 500);
+    }
+    
+    $stmt->close();
+}
+
+// ==================== 好友功能實作 ====================
+
+function searchUsers($conn, $userId) {
+    $query = trim($_GET['query'] ?? '');
+    
+    if (strlen($query) < 2) {
+        jsonResponse(['users' => []]);
+    }
+    
+    $searchTerm = "%{$query}%";
+    $stmt = $conn->prepare("
+        SELECT u.id, u.username, u.bio, u.avatar,
+               (SELECT status FROM friendships WHERE user_id = ? AND friend_id = u.id) as friendship_status,
+               (SELECT status FROM friendships WHERE user_id = u.id AND friend_id = ?) as reverse_status
+        FROM users u 
+        WHERE u.username LIKE ? AND u.id != ?
+        LIMIT 20
+    ");
+    $stmt->bind_param("iisi", $userId, $userId, $searchTerm, $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $users = [];
+    while ($row = $result->fetch_assoc()) {
+        // 判斷好友狀態
+        if ($row['friendship_status'] === 'accepted' || $row['reverse_status'] === 'accepted') {
+            $row['relation'] = 'friend';
+        } elseif ($row['friendship_status'] === 'pending') {
+            $row['relation'] = 'pending_sent';
+        } elseif ($row['reverse_status'] === 'pending') {
+            $row['relation'] = 'pending_received';
+        } else {
+            $row['relation'] = 'none';
+        }
+        unset($row['friendship_status'], $row['reverse_status']);
+        $users[] = $row;
+    }
+    
+    $stmt->close();
+    jsonResponse(['users' => $users]);
+}
+
+function getFriends($conn, $userId) {
+    $stmt = $conn->prepare("
+        SELECT u.id, u.username, u.bio, u.avatar, f.created_at as friends_since
+        FROM users u
+        JOIN friendships f ON (f.friend_id = u.id AND f.user_id = ?)
+        WHERE f.status = 'accepted'
+        ORDER BY u.username ASC
+    ");
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $friends = [];
+    while ($row = $result->fetch_assoc()) {
+        $friends[] = $row;
+    }
+    
+    $stmt->close();
+    jsonResponse(['friends' => $friends]);
+}
+
+function getFriendRequests($conn, $userId) {
+    $stmt = $conn->prepare("
+        SELECT u.id, u.username, u.bio, u.avatar, f.created_at as request_date
+        FROM users u
+        JOIN friendships f ON (f.user_id = u.id AND f.friend_id = ?)
+        WHERE f.status = 'pending'
+        ORDER BY f.created_at DESC
+    ");
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $requests = [];
+    while ($row = $result->fetch_assoc()) {
+        $requests[] = $row;
+    }
+    
+    $stmt->close();
+    jsonResponse(['requests' => $requests]);
+}
+
+function sendFriendRequest($conn, $userId) {
+    $friendId = intval($_POST['friend_id'] ?? 0);
+    
+    if ($friendId === $userId) {
+        jsonResponse(['error' => '不能加自己為好友'], 400);
+    }
+    
+    // 檢查使用者是否存在
+    $stmt = $conn->prepare("SELECT id FROM users WHERE id = ?");
+    $stmt->bind_param("i", $friendId);
+    $stmt->execute();
+    if ($stmt->get_result()->num_rows === 0) {
+        jsonResponse(['error' => '使用者不存在'], 404);
+    }
+    $stmt->close();
+    
+    // 檢查是否已經是好友或已發送請求
+    $stmt = $conn->prepare("SELECT status FROM friendships WHERE user_id = ? AND friend_id = ?");
+    $stmt->bind_param("ii", $userId, $friendId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        $existing = $result->fetch_assoc();
+        if ($existing['status'] === 'accepted') {
+            jsonResponse(['error' => '已經是好友了'], 400);
+        } elseif ($existing['status'] === 'pending') {
+            jsonResponse(['error' => '已發送過好友請求'], 400);
+        }
+    }
+    $stmt->close();
+    
+    // 檢查對方是否已發送請求給我
+    $stmt = $conn->prepare("SELECT status FROM friendships WHERE user_id = ? AND friend_id = ?");
+    $stmt->bind_param("ii", $friendId, $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        $existing = $result->fetch_assoc();
+        if ($existing['status'] === 'pending') {
+            // 自動接受對方的請求
+            $stmt2 = $conn->prepare("UPDATE friendships SET status = 'accepted' WHERE user_id = ? AND friend_id = ?");
+            $stmt2->bind_param("ii", $friendId, $userId);
+            $stmt2->execute();
+            $stmt2->close();
+            
+            // 建立反向好友關係
+            $stmt3 = $conn->prepare("INSERT INTO friendships (user_id, friend_id, status) VALUES (?, ?, 'accepted')");
+            $stmt3->bind_param("ii", $userId, $friendId);
+            $stmt3->execute();
+            $stmt3->close();
+            
+            jsonResponse(['success' => true, 'message' => '已成為好友']);
+        }
+    }
+    $stmt->close();
+    
+    // 發送好友請求
+    $stmt = $conn->prepare("INSERT INTO friendships (user_id, friend_id, status) VALUES (?, ?, 'pending')");
+    $stmt->bind_param("ii", $userId, $friendId);
+    
+    if ($stmt->execute()) {
+        jsonResponse(['success' => true, 'message' => '好友請求已發送']);
+    } else {
+        jsonResponse(['error' => '發送請求失敗'], 500);
+    }
+    
+    $stmt->close();
+}
+
+function acceptFriendRequest($conn, $userId) {
+    $friendId = intval($_POST['friend_id'] ?? 0);
+    
+    // 檢查是否有待處理的請求
+    $stmt = $conn->prepare("SELECT id FROM friendships WHERE user_id = ? AND friend_id = ? AND status = 'pending'");
+    $stmt->bind_param("ii", $friendId, $userId);
+    $stmt->execute();
+    if ($stmt->get_result()->num_rows === 0) {
+        jsonResponse(['error' => '沒有待處理的好友請求'], 404);
+    }
+    $stmt->close();
+    
+    // 更新請求狀態
+    $stmt = $conn->prepare("UPDATE friendships SET status = 'accepted' WHERE user_id = ? AND friend_id = ?");
+    $stmt->bind_param("ii", $friendId, $userId);
+    $stmt->execute();
+    $stmt->close();
+    
+    // 建立反向好友關係
+    $stmt = $conn->prepare("INSERT INTO friendships (user_id, friend_id, status) VALUES (?, ?, 'accepted') ON DUPLICATE KEY UPDATE status = 'accepted'");
+    $stmt->bind_param("ii", $userId, $friendId);
+    $stmt->execute();
+    $stmt->close();
+    
+    jsonResponse(['success' => true, 'message' => '已接受好友請求']);
+}
+
+function rejectFriendRequest($conn, $userId) {
+    $friendId = intval($_POST['friend_id'] ?? 0);
+    
+    $stmt = $conn->prepare("DELETE FROM friendships WHERE user_id = ? AND friend_id = ? AND status = 'pending'");
+    $stmt->bind_param("ii", $friendId, $userId);
+    
+    if ($stmt->execute() && $stmt->affected_rows > 0) {
+        jsonResponse(['success' => true]);
+    } else {
+        jsonResponse(['error' => '操作失敗'], 400);
+    }
+    
+    $stmt->close();
+}
+
+function removeFriend($conn, $userId) {
+    $friendId = intval($_POST['friend_id'] ?? 0);
+    
+    // 刪除雙向好友關係
+    $stmt = $conn->prepare("DELETE FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)");
+    $stmt->bind_param("iiii", $userId, $friendId, $friendId, $userId);
+    
+    if ($stmt->execute()) {
+        jsonResponse(['success' => true]);
+    } else {
+        jsonResponse(['error' => '移除好友失敗'], 500);
+    }
+    
+    $stmt->close();
+}
+
+function getUserProfile($conn, $userId) {
+    $targetUserId = intval($_GET['user_id'] ?? 0);
+    
+    // 取得使用者資料
+    $stmt = $conn->prepare("
+        SELECT u.id, u.username, u.bio, u.avatar, u.created_at,
+               (SELECT COUNT(*) FROM photos WHERE user_id = u.id AND is_public = TRUE) as photo_count,
+               (SELECT COUNT(*) FROM friendships WHERE user_id = u.id AND status = 'accepted') as friend_count
+        FROM users u WHERE u.id = ?
+    ");
+    $stmt->bind_param("i", $targetUserId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        jsonResponse(['error' => '使用者不存在'], 404);
+    }
+    
+    $user = $result->fetch_assoc();
+    $stmt->close();
+    
+    // 檢查好友關係
+    $stmt = $conn->prepare("SELECT status FROM friendships WHERE user_id = ? AND friend_id = ?");
+    $stmt->bind_param("ii", $userId, $targetUserId);
+    $stmt->execute();
+    $friendResult = $stmt->get_result();
+    
+    if ($friendResult->num_rows > 0) {
+        $friendship = $friendResult->fetch_assoc();
+        $user['relation'] = $friendship['status'] === 'accepted' ? 'friend' : 'pending_sent';
+    } else {
+        // 檢查反向
+        $stmt2 = $conn->prepare("SELECT status FROM friendships WHERE user_id = ? AND friend_id = ?");
+        $stmt2->bind_param("ii", $targetUserId, $userId);
+        $stmt2->execute();
+        $reverseResult = $stmt2->get_result();
+        if ($reverseResult->num_rows > 0) {
+            $reverse = $reverseResult->fetch_assoc();
+            $user['relation'] = $reverse['status'] === 'accepted' ? 'friend' : 'pending_received';
+        } else {
+            $user['relation'] = $userId == $targetUserId ? 'self' : 'none';
+        }
+        $stmt2->close();
+    }
+    $stmt->close();
+    
+    jsonResponse(['user' => $user]);
+}
+
+function getUserPhotos($conn, $userId) {
+    $targetUserId = intval($_GET['user_id'] ?? 0);
+    
+    // 檢查是否是好友或自己
+    $isFriend = false;
+    $isSelf = ($userId === $targetUserId);
+    
+    if (!$isSelf) {
+        $stmt = $conn->prepare("SELECT id FROM friendships WHERE user_id = ? AND friend_id = ? AND status = 'accepted'");
+        $stmt->bind_param("ii", $userId, $targetUserId);
+        $stmt->execute();
+        $isFriend = $stmt->get_result()->num_rows > 0;
+        $stmt->close();
+    }
+    
+    // 取得照片（好友或自己可以看到所有，否則只能看公開的）
+    if ($isSelf || $isFriend) {
+        $stmt = $conn->prepare("
+            SELECT p.*, a.name as album_name, u.username,
+                   (SELECT COUNT(*) FROM likes WHERE photo_id = p.id) as like_count,
+                   (SELECT COUNT(*) FROM comments WHERE photo_id = p.id) as comment_count,
+                   (SELECT COUNT(*) FROM likes WHERE photo_id = p.id AND user_id = ?) as is_liked
+            FROM photos p 
+            JOIN albums a ON p.album_id = a.id 
+            JOIN users u ON p.user_id = u.id
+            WHERE p.user_id = ?
+            ORDER BY p.created_at DESC
+        ");
+        $stmt->bind_param("ii", $userId, $targetUserId);
+    } else {
+        $stmt = $conn->prepare("
+            SELECT p.*, a.name as album_name, u.username,
+                   (SELECT COUNT(*) FROM likes WHERE photo_id = p.id) as like_count,
+                   (SELECT COUNT(*) FROM comments WHERE photo_id = p.id) as comment_count,
+                   (SELECT COUNT(*) FROM likes WHERE photo_id = p.id AND user_id = ?) as is_liked
+            FROM photos p 
+            JOIN albums a ON p.album_id = a.id 
+            JOIN users u ON p.user_id = u.id
+            WHERE p.user_id = ? AND p.is_public = TRUE
+            ORDER BY p.created_at DESC
+        ");
+        $stmt->bind_param("ii", $userId, $targetUserId);
+    }
+    
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $photos = [];
+    while ($row = $result->fetch_assoc()) {
+        $row['is_liked'] = $row['is_liked'] > 0;
+        $photos[] = $row;
+    }
+    
+    $stmt->close();
+    jsonResponse(['photos' => $photos, 'is_friend' => $isFriend, 'is_self' => $isSelf]);
+}
+
+// ==================== 按讚功能實作 ====================
+
+function toggleLike($conn, $userId) {
+    $photoId = intval($_POST['photo_id'] ?? 0);
+    
+    // 檢查照片是否存在
+    $stmt = $conn->prepare("SELECT user_id, is_public FROM photos WHERE id = ?");
+    $stmt->bind_param("i", $photoId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        jsonResponse(['error' => '照片不存在'], 404);
+    }
+    
+    $photo = $result->fetch_assoc();
+    $stmt->close();
+    
+    // 檢查是否有權限按讚（公開照片或是好友的照片）
+    if ($photo['user_id'] !== $userId && !$photo['is_public']) {
+        $stmt = $conn->prepare("SELECT id FROM friendships WHERE user_id = ? AND friend_id = ? AND status = 'accepted'");
+        $stmt->bind_param("ii", $userId, $photo['user_id']);
+        $stmt->execute();
+        if ($stmt->get_result()->num_rows === 0) {
+            jsonResponse(['error' => '無權限'], 403);
+        }
+        $stmt->close();
+    }
+    
+    // 檢查是否已經按讚
+    $stmt = $conn->prepare("SELECT id FROM likes WHERE user_id = ? AND photo_id = ?");
+    $stmt->bind_param("ii", $userId, $photoId);
+    $stmt->execute();
+    $liked = $stmt->get_result()->num_rows > 0;
+    $stmt->close();
+    
+    if ($liked) {
+        // 取消按讚
+        $stmt = $conn->prepare("DELETE FROM likes WHERE user_id = ? AND photo_id = ?");
+        $stmt->bind_param("ii", $userId, $photoId);
+        $stmt->execute();
+        $stmt->close();
+        $isLiked = false;
+    } else {
+        // 按讚
+        $stmt = $conn->prepare("INSERT INTO likes (user_id, photo_id) VALUES (?, ?)");
+        $stmt->bind_param("ii", $userId, $photoId);
+        $stmt->execute();
+        $stmt->close();
+        $isLiked = true;
+    }
+    
+    // 取得最新按讚數
+    $stmt = $conn->prepare("SELECT COUNT(*) as count FROM likes WHERE photo_id = ?");
+    $stmt->bind_param("i", $photoId);
+    $stmt->execute();
+    $count = $stmt->get_result()->fetch_assoc()['count'];
+    $stmt->close();
+    
+    jsonResponse(['success' => true, 'is_liked' => $isLiked, 'like_count' => $count]);
+}
+
+function getLikes($conn, $userId) {
+    $photoId = intval($_GET['photo_id'] ?? 0);
+    
+    $stmt = $conn->prepare("
+        SELECT u.id, u.username, u.avatar, l.created_at
+        FROM likes l
+        JOIN users u ON l.user_id = u.id
+        WHERE l.photo_id = ?
+        ORDER BY l.created_at DESC
+    ");
+    $stmt->bind_param("i", $photoId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $likes = [];
+    while ($row = $result->fetch_assoc()) {
+        $likes[] = $row;
+    }
+    
+    $stmt->close();
+    jsonResponse(['likes' => $likes]);
+}
+
+// ==================== 留言功能實作 ====================
+
+function getComments($conn, $userId) {
+    $photoId = intval($_GET['photo_id'] ?? 0);
+    
+    $stmt = $conn->prepare("
+        SELECT c.*, u.username, u.avatar
+        FROM comments c
+        JOIN users u ON c.user_id = u.id
+        WHERE c.photo_id = ?
+        ORDER BY c.created_at ASC
+    ");
+    $stmt->bind_param("i", $photoId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $comments = [];
+    while ($row = $result->fetch_assoc()) {
+        $row['is_own'] = ($row['user_id'] == $userId);
+        $comments[] = $row;
+    }
+    
+    $stmt->close();
+    jsonResponse(['comments' => $comments]);
+}
+
+function addComment($conn, $userId) {
+    $photoId = intval($_POST['photo_id'] ?? 0);
+    $content = trim($_POST['content'] ?? '');
+    
+    if (empty($content)) {
+        jsonResponse(['error' => '請輸入留言內容'], 400);
+    }
+    
+    if (strlen($content) > 1000) {
+        jsonResponse(['error' => '留言內容過長'], 400);
+    }
+    
+    // 檢查照片是否存在
+    $stmt = $conn->prepare("SELECT user_id, is_public FROM photos WHERE id = ?");
+    $stmt->bind_param("i", $photoId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        jsonResponse(['error' => '照片不存在'], 404);
+    }
+    
+    $photo = $result->fetch_assoc();
+    $stmt->close();
+    
+    // 檢查是否有權限留言
+    if ($photo['user_id'] !== $userId && !$photo['is_public']) {
+        $stmt = $conn->prepare("SELECT id FROM friendships WHERE user_id = ? AND friend_id = ? AND status = 'accepted'");
+        $stmt->bind_param("ii", $userId, $photo['user_id']);
+        $stmt->execute();
+        if ($stmt->get_result()->num_rows === 0) {
+            jsonResponse(['error' => '無權限'], 403);
+        }
+        $stmt->close();
+    }
+    
+    // 新增留言
+    $stmt = $conn->prepare("INSERT INTO comments (user_id, photo_id, content) VALUES (?, ?, ?)");
+    $stmt->bind_param("iis", $userId, $photoId, $content);
+    
+    if ($stmt->execute()) {
+        $commentId = $stmt->insert_id;
+        $stmt->close();
+        
+        // 取得新增的留言
+        $stmt = $conn->prepare("
+            SELECT c.*, u.username, u.avatar
+            FROM comments c
+            JOIN users u ON c.user_id = u.id
+            WHERE c.id = ?
+        ");
+        $stmt->bind_param("i", $commentId);
+        $stmt->execute();
+        $comment = $stmt->get_result()->fetch_assoc();
+        $comment['is_own'] = true;
+        $stmt->close();
+        
+        jsonResponse(['success' => true, 'comment' => $comment]);
+    } else {
+        jsonResponse(['error' => '新增留言失敗'], 500);
+    }
+}
+
+function deleteComment($conn, $userId) {
+    $commentId = intval($_POST['comment_id'] ?? 0);
+    
+    // 驗證留言是否屬於該使用者
+    $stmt = $conn->prepare("SELECT id FROM comments WHERE id = ? AND user_id = ?");
+    $stmt->bind_param("ii", $commentId, $userId);
+    $stmt->execute();
+    if ($stmt->get_result()->num_rows === 0) {
+        jsonResponse(['error' => '留言不存在或無權限'], 404);
+    }
+    $stmt->close();
+    
+    // 刪除留言
+    $stmt = $conn->prepare("DELETE FROM comments WHERE id = ?");
+    $stmt->bind_param("i", $commentId);
+    
+    if ($stmt->execute()) {
+        jsonResponse(['success' => true]);
+    } else {
+        jsonResponse(['error' => '刪除留言失敗'], 500);
     }
     
     $stmt->close();
