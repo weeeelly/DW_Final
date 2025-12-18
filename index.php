@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <div class="demo-info">
                 <p><strong>測試帳號：</strong></p>
-                <p>帳號：demo / 密碼：password123</p>
+                <p>帳號：willy / 密碼：willy0310</p>
             </div>
         </div>
     </div>
