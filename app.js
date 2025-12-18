@@ -1054,7 +1054,8 @@ class FriendMemoryGame {
         this.playerSequence = [];
         this.currentBeat = 0;
         this.gamePhase = 'waiting'; // waiting, showing, playing, finished
-        this.difficulty = 6;
+        this.difficulty = 8; // 固定8張照片
+        this.fixedBPM = 180; // 固定180 BPM
         this.gameTimer = null;
         this.beatTimer = null;
         this.startTime = null;
@@ -1086,13 +1087,7 @@ class FriendMemoryGame {
             });
         }
         
-        // 難度選擇
-        const difficultySelect = document.getElementById('difficultySelect');
-        if (difficultySelect) {
-            difficultySelect.addEventListener('change', (e) => {
-                this.difficulty = parseInt(e.target.value);
-            });
-        }
+        // 固定難度為8，無需選擇功能
     }
     
     async openGameModal() {
@@ -1198,30 +1193,33 @@ class FriendMemoryGame {
     }
     
     generateGameSequence() {
-        // 從好友數據中隨機選擇指定數量的好友
+        // 從好友數據中隨機選擇8張照片
         const shuffled = [...this.gameData].sort(() => Math.random() - 0.5);
-        this.gameSequence = shuffled.slice(0, this.difficulty);
+        this.gameSequence = shuffled.slice(0, 8); // 固定使用8張
         this.playerSequence = [];
     }
     
     async loadGameMusic() {
-        // 嘗試載入自定義音樂
-        const customMusicFile = document.getElementById('customMusicFile');
-        
         if (this.audio) {
             this.audio.pause();
         }
         
-        if (customMusicFile && customMusicFile.files.length > 0) {
-            // 使用使用者上傳的音樂
-            await this.loadCustomMusic(customMusicFile.files[0]);
-        } else {
-            // 使用 Web Audio API 創建節拍聲
+        try {
+            // 使用固定的音樂檔案路徑
+            const audio = new Audio('game_music.m4a'); // 固定音樂檔案，放在同一目錄
+            audio.loop = true;
+            audio.volume = 0.3;
+            
+            this.audio = audio;
+            this.customMusicLoaded = true;
+        } catch (error) {
+            console.warn('無法載入背景音樂，使用節拍聲:', error);
+            // 使用 Web Audio API 創建節拍聲作為備用
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 this.audioContext = audioContext;
-            } catch (error) {
-                console.warn('無法初始化音頻:', error);
+            } catch (audioError) {
+                console.warn('無法初始化音頻:', audioError);
             }
         }
     }
@@ -1250,11 +1248,8 @@ class FriendMemoryGame {
     }
     
     getBeatInterval() {
-        if (this.customBPM) {
-            // 根據 BPM 計算節拍間隔（毫秒）
-            return (60 / this.customBPM) * 1000;
-        }
-        return 1000; // 預設 1 秒一拍
+        // 固定使用180 BPM
+        return (60 / this.fixedBPM) * 1000; // 約333毫秒一拍
     }
     
     playBeatSound() {
@@ -1279,7 +1274,7 @@ class FriendMemoryGame {
         this.shuffledOptions = null;
         
         let beatCount = 0;
-        const totalBeats = this.difficulty * 3; // 三階段，共 24 拍
+        const totalBeats = 8 * 3; // 三階段，固定24拍（8張照片）
         
         const beatInterval = setInterval(() => {
             this.playBeatSound();
@@ -1289,25 +1284,25 @@ class FriendMemoryGame {
             this.currentBeat = beatCount;
             
             // 第一階段：準備階段 (1-8拍)
-            if (beatCount <= this.difficulty) {
+            if (beatCount <= 8) {
                 this.gamePhase = 'preparing';
                 this.showPreparationPhase(beatCount);
             }
             // 第二階段：展示階段 (9-16拍)
-            else if (beatCount <= this.difficulty * 2) {
-                if (beatCount === this.difficulty + 1) {
+            else if (beatCount <= 16) {
+                if (beatCount === 9) {
                     this.gamePhase = 'showing';
                     this.startShowingPhase();
                 }
-                this.showDisplayPhase(beatCount - this.difficulty);
+                this.showDisplayPhase(beatCount - 8);
             }
             // 第三階段：回答階段 (17-24拍)
             else {
-                if (beatCount === this.difficulty * 2 + 1) {
+                if (beatCount === 17) {
                     this.gamePhase = 'playing';
                     this.startPlayingPhase();
                 }
-                this.handlePlayerPhase(beatCount - this.difficulty * 2);
+                this.handlePlayerPhase(beatCount - 16);
             }
             
             this.updateGameInfo();
@@ -1339,7 +1334,7 @@ class FriendMemoryGame {
         }
         
         // 預載入照片資料
-        if (beat <= this.difficulty) {
+        if (beat <= 8) {
             const friend = this.gameSequence[beat - 1];
             if (friend && friend.photo) {
                 // 預載入照片
@@ -1407,7 +1402,7 @@ class FriendMemoryGame {
         if (!showingGrid) return;
         
         // 逐一顯示照片
-        if (beat <= this.difficulty) {
+        if (beat <= 8) {
             const friend = this.gameSequence[beat - 1];
             const photoSrc = friend.photo && friend.photo !== 'null' && friend.photo !== '' ? 
                 (friend.photo.startsWith('uploads/') || friend.photo.startsWith('/') || friend.photo.startsWith('http') ? 
@@ -1561,7 +1556,7 @@ class FriendMemoryGame {
         }
         
         const correctCount = this.playerSequence.filter(p => p.correct).length;
-        const accuracy = Math.round((correctCount / this.difficulty) * 100);
+        const accuracy = Math.round((correctCount / 8) * 100);
         const gameTime = Math.round((Date.now() - this.startTime) / 1000);
         
         // 顯示結果
@@ -1594,13 +1589,7 @@ class FriendMemoryGame {
         
         // 顯示詳細統計
         const gameDifficultyElement = document.getElementById('gameDifficulty');
-        const difficultyText = {
-            4: '簡單',
-            6: '普通',
-            8: '困難'
-        };
         gameDifficultyElement.innerHTML = `
-            <div>${difficultyText[this.difficulty]}</div>
             <small style="color: var(--text-secondary); font-size: 0.8em;">
                 正確: ${correctCount} | 錯誤: ${wrongAnswers} | 錯過: ${missedBeats}
             </small>
@@ -1615,7 +1604,7 @@ class FriendMemoryGame {
     }
     
     updateGameInfo() {
-        const totalBeats = this.difficulty * 3;
+        const totalBeats = 24; // 固定24拍
         document.getElementById('currentBeat').textContent = this.currentBeat;
         
         const phaseText = {

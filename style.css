@@ -3364,3 +3364,46 @@ a:hover {
     font-size: 0.85rem;
     border: 1px solid var(--border-color);
 }
+
+/* 固定遊戲設定樣式 */
+.game-settings {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: var(--surface-light);
+    border-radius: var(--radius);
+    border: 2px solid var(--border-color);
+}
+
+.game-settings h3 {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.settings-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem;
+    background: var(--surface-color);
+    border-radius: var(--radius-sm);
+    border-left: 4px solid var(--secondary-color);
+}
+
+.setting-icon {
+    font-size: 1.3rem;
+    margin-right: 0.8rem;
+    width: 30px;
+    text-align: center;
+}
+
+.setting-text {
+    color: var(--text-primary);
+    font-weight: 500;
+}

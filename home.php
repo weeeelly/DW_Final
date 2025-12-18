@@ -383,24 +383,21 @@ $conn->close();
                             <li>🧠 記住照片出現的順序</li>
                             <li>👆 接下來 8 拍，按順序點擊正確的朋友名稱</li>
                         </ul>
-                        <div class="difficulty-selector">
-                            <label>選擇難度：</label>
-                            <select id="difficultySelect">
-                                <option value="4">簡單 (4張照片)</option>
-                                <option value="6" selected>普通 (6張照片)</option>
-                                <option value="8">困難 (8張照片)</option>
-                            </select>
-                        </div>
-                        
-                        <div class="music-selector">
-                            <label>🎵 自定義背景音樂（可選）：</label>
-                            <input type="file" id="customMusicFile" accept="audio/*">
-                            <small class="form-hint">支援 MP3、WAV、OGG 等音頻格式</small>
-                            
-                            <div class="bpm-selector">
-                                <label for="bpmInput">節拍速度 (BPM)：</label>
-                                <input type="number" id="bpmInput" min="60" max="180" value="120" placeholder="120">
-                                <small class="form-hint">建議：60-180 BPM，預設 120</small>
+                        <div class="game-settings">
+                            <h3>🎯 固定遊戲設定</h3>
+                            <div class="settings-info">
+                                <div class="setting-item">
+                                    <span class="setting-icon">📸</span>
+                                    <span class="setting-text">8張照片（固定難度）</span>
+                                </div>
+                                <div class="setting-item">
+                                    <span class="setting-icon">🎵</span>
+                                    <span class="setting-text">內建背景音樂</span>
+                                </div>
+                                <div class="setting-item">
+                                    <span class="setting-icon">⚡</span>
+                                    <span class="setting-text">180 BPM（快節奏）</span>
+                                </div>
                             </div>
                         </div>
                         <button class="btn btn-primary btn-lg" id="startGameButton">
@@ -457,7 +454,7 @@ $conn->close();
                                 <span class="stat-value" id="gameTime">30秒</span>
                             </div>
                             <div class="stat-item">
-                                <span class="stat-label">難度</span>
+                                <span class="stat-label">成績</span>
                                 <span class="stat-value" id="gameDifficulty">普通</span>
                             </div>
                         </div>
