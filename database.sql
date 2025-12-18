@@ -117,27 +117,27 @@ INSERT INTO albums (user_id, name, is_default) VALUES
 -- 測試照片資料（至少 10 筆）
 INSERT INTO photos (user_id, album_id, image_url, caption, is_public) VALUES 
 -- demo 使用者的照片
-(1, 1, 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400', '美麗的山景，週末爬山時拍的', TRUE),
-(1, 1, 'https://images.unsplash.com/photo-1475070929565-c985b496cb9f?w=400', '夕陽西下的海邊', TRUE),
-(1, 2, 'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=400', '第一週開始學習程式設計', TRUE),
-(1, 2, 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=400', '深夜寫code的桌面', TRUE),
-(1, 3, 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=400', '台北101夜景', TRUE),
-(1, 3, 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400', '京都的竹林小徑', TRUE),
-(1, 3, 'https://images.unsplash.com/photo-1528164344705-47542687000d?w=400', '富士山日出', TRUE),
-(1, 4, 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400', '超好吃的義大利麵', TRUE),
-(1, 4, 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400', '週末在家做披薩', TRUE),
+(1, 1, 'uploads/1/photo-1506905925346-21bda4d32df4.jpeg', '美麗的山景，週末爬山時拍的', TRUE),
+(1, 1, 'uploads/1/photo-1475070929565-c985b496cb9f.jpeg', '夕陽西下的海邊', TRUE),
+(1, 2, 'uploads/1/photo-1488590528505-98d2b5aba04b.jpeg', '第一週開始學習程式設計', TRUE),
+(1, 2, 'uploads/1/photo-1517694712202-14dd9538aa97.jpeg', '深夜寫code的桌面', TRUE),
+(1, 3, 'uploads/1/photo-1480714378408-67cf0d13bc1b.jpeg', '台北101夜景', TRUE),
+(1, 3, 'uploads/1/photo-1493976040374-85c8e12f0c0e.jpeg', '京都的竹林小徑', TRUE),
+(1, 3, 'uploads/1/photo-1528164344705-47542687000d.jpeg', '富士山日出', TRUE),
+(1, 4, 'uploads/1/photo-1504674900247-0877df9cc836.jpeg', '超好吃的義大利麵', TRUE),
+(1, 4, 'uploads/1/photo-1565299624946-b28f40a0ae38.jpeg', '週末在家做披薩', TRUE),
 
 -- testuser 的照片
-(2, 5, 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400', '早晨的咖啡時光', TRUE),
-(2, 6, 'https://images.unsplash.com/photo-1542281286-9e0a16bb7366?w=400', '今天的讀書筆記', TRUE),
+(2, 5, 'uploads/2/photo-1518837695005-2083093ee35b?w=400', '早晨的咖啡時光', TRUE),
+(2, 6, 'uploads/2/photo-1542281286-9e0a16bb7366?w=400', '今天的讀書筆記', TRUE),
 
 -- alice 的照片
-(3, 7, 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400', '森林裡的陽光', TRUE),
-(3, 8, 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400', '山間的小溪', TRUE),
+(3, 7, 'uploads/3/photo-1441974231531-c6227db76b6e?w=400', '森林裡的陽光', TRUE),
+(3, 8, 'uploads/3/photo-1469474968028-56623f02e42e?w=400', '山間的小溪', TRUE),
 
 -- bob 的照片
-(4, 9, 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400', '今天的工作環境', TRUE),
-(4, 10, 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=400', '新買的機械鍵盤', TRUE);
+(4, 9, 'uploads/4/photo-1461749280684-dccba630e2f6?w=400', '今天的工作環境', TRUE),
+(4, 10,'uploads/4/photo-1498050108023-c5249f4df085?w=400', '新買的機械鍵盤', TRUE);
 
 -- 好友關係測試資料
 INSERT INTO friendships (user_id, friend_id, status) VALUES 
