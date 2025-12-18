@@ -10,7 +10,7 @@ $currentUsername = getCurrentUsername();
 $profileUserId = intval($_GET['id'] ?? $userId);
 
 // 取得使用者資料
-$stmt = $conn->prepare("SELECT id, username, bio, avatar, created_at FROM users WHERE id = ?");
+$stmt = $conn->prepare("SELECT id, username, bio, avatar, created_at, ai_estimated_age, ai_tags FROM users WHERE id = ?");
 $stmt->bind_param("i", $profileUserId);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -101,6 +101,31 @@ $conn->close();
                 <?php if ($profileUser['bio']): ?>
                     <p class="profile-bio"><?php echo h($profileUser['bio']); ?></p>
                 <?php endif; ?>
+
+                <?php if (!empty($profileUser['ai_estimated_age'])): ?>
+                <div class="ai-profile-info">
+                    <div class="ai-age-badge">
+                        📷 照片年齡：<?php echo h($profileUser['ai_estimated_age']); ?>
+                    </div>
+                    <?php 
+                    $tags = json_decode($profileUser['ai_tags'], true);
+                    if ($tags && is_array($tags)): 
+                    ?>
+                    <div class="ai-tags">
+                        <?php foreach ($tags as $tag): ?>
+                            <span class="ai-tag">#<?php echo h($tag); ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                <?php elseif ($isSelf): ?>
+                <div class="ai-profile-action">
+                    <button class="btn btn-primary btn-sm" id="aiAnalyzeBtn" onclick="handleAiAnalyze()">
+                        📷 分析照片年齡
+                    </button>
+                </div>
+                <?php endif; ?>
+
                 <div class="profile-stats">
                     <div class="stat">
                         <span class="stat-value"><?php echo $photoCount; ?></span>
@@ -512,6 +537,31 @@ $conn->close();
                 toast.style.opacity = '0';
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
+        }
+
+        async function handleAiAnalyze() {
+            if (!confirm('確定要分析您的所有照片嗎？這可能需要一點時間。')) {
+                return;
+            }
+            
+            showToast('正在分析中，請稍候...', 'info');
+            
+            try {
+                const response = await fetch('api.php?action=analyze_user_profile');
+                const data = await response.json();
+                
+                if (data.success) {
+                    showToast(`分析完成！預估年齡：${data.age}`, 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showToast(data.error || '分析失敗', 'error');
+                }
+            } catch (error) {
+                console.error(error);
+                showToast('發生錯誤，請稍後再試', 'error');
+            }
         }
     </script>
 </body>

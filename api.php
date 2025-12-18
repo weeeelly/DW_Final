@@ -64,6 +64,10 @@ switch ($action) {
     case 'get_friends':
         getFriends($conn, $userId);
         break;
+
+    case 'get_photo_roulette':
+        getPhotoRoulette($conn, $userId);
+        break;
         
     case 'get_friend_requests':
         getFriendRequests($conn, $userId);
@@ -91,6 +95,10 @@ switch ($action) {
         
     case 'get_user_photos':
         getUserPhotos($conn, $userId);
+        break;
+
+    case 'analyze_user_profile':
+        analyzeUserProfile($conn, $userId);
         break;
     
     // ==================== 按讚相關 ====================
@@ -901,7 +909,7 @@ function getUserProfile($conn, $userId) {
     
     // 取得使用者資料
     $stmt = $conn->prepare("
-        SELECT u.id, u.username, u.bio, u.avatar, u.created_at,
+        SELECT u.id, u.username, u.bio, u.avatar, u.created_at, u.ai_estimated_age, u.ai_tags,
                (SELECT COUNT(*) FROM photos WHERE user_id = u.id AND is_public = TRUE) as photo_count,
                (SELECT COUNT(*) FROM friendships WHERE user_id = u.id AND status = 'accepted') as friend_count
         FROM users u WHERE u.id = ?
@@ -1198,6 +1206,189 @@ function deleteComment($conn, $userId) {
         jsonResponse(['error' => '刪除留言失敗'], 500);
     }
     
+    $stmt->close();
+}
+
+function getPhotoRoulette($conn, $userId) {
+    // 1. Get a random photo from friends
+    $stmt = $conn->prepare("
+        SELECT p.id, p.image_url, p.user_id, u.username, u.avatar 
+        FROM photos p 
+        JOIN users u ON p.user_id = u.id 
+        JOIN friendships f ON (f.friend_id = p.user_id AND f.user_id = ?) 
+        WHERE f.status = 'accepted' 
+        ORDER BY RAND() 
+        LIMIT 1
+    ");
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        jsonResponse(['error' => '沒有足夠的好友照片來進行遊戲'], 404);
+    }
+    
+    $photo = $result->fetch_assoc();
+    $stmt->close();
+    
+    $correctUserId = $photo['user_id'];
+    
+    // 2. Get 3 distractors (random users, preferably friends, excluding the correct user)
+    $distractors = [];
+    
+    $stmt = $conn->prepare("
+        SELECT u.id, u.username, u.avatar 
+        FROM users u
+        JOIN friendships f ON (f.friend_id = u.id AND f.user_id = ?)
+        WHERE f.status = 'accepted' AND u.id != ?
+        ORDER BY RAND()
+        LIMIT 3
+    ");
+    $stmt->bind_param("ii", $userId, $correctUserId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    while ($row = $result->fetch_assoc()) {
+        $distractors[] = $row;
+    }
+    $stmt->close();
+    
+    // If we don't have enough distractors (less than 3), fetch random users from the system
+    if (count($distractors) < 3) {
+        $needed = 3 - count($distractors);
+        $excludeIds = [$correctUserId, $userId]; // Exclude correct user and self
+        foreach ($distractors as $d) {
+            $excludeIds[] = $d['id'];
+        }
+        
+        // Create placeholders string like ?,?,?
+        $placeholders = implode(',', array_fill(0, count($excludeIds), '?'));
+        $types = str_repeat('i', count($excludeIds)) . 'i'; // types for IN clause + LIMIT
+        $params = array_merge($excludeIds, [$needed]);
+        
+        $sql = "SELECT id, username, avatar FROM users WHERE id NOT IN ($placeholders) ORDER BY RAND() LIMIT ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        while ($row = $result->fetch_assoc()) {
+            $distractors[] = $row;
+        }
+        $stmt->close();
+    }
+    
+    // 3. Combine and shuffle options
+    $options = $distractors;
+    $options[] = [
+        'id' => $photo['user_id'],
+        'username' => $photo['username'],
+        'avatar' => $photo['avatar']
+    ];
+    
+    shuffle($options);
+    
+    jsonResponse([
+        'photo' => [
+            'id' => $photo['id'],
+            'image_url' => $photo['image_url']
+        ],
+        'options' => $options,
+        'correct_user_id' => $correctUserId
+    ]);
+}
+
+function analyzeUserProfile($conn, $userId) {
+    // 1. Get user's photos (limit 10)
+    $stmt = $conn->prepare("SELECT image_url FROM photos WHERE user_id = ? ORDER BY created_at DESC LIMIT 10");
+    $stmt->bind_param("i", $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $imageParts = [];
+    while ($row = $result->fetch_assoc()) {
+        $imageUrl = $row['image_url'];
+        $imageData = '';
+        
+        if (filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+            $imageData = @file_get_contents($imageUrl);
+        } else {
+            $localPath = __DIR__ . '/' . $imageUrl;
+            if (file_exists($localPath)) {
+                $imageData = file_get_contents($localPath);
+            }
+        }
+        
+        if ($imageData) {
+            $mimeType = 'image/jpeg';
+            if (strpos($imageUrl, '.png') !== false) $mimeType = 'image/png';
+            if (strpos($imageUrl, '.webp') !== false) $mimeType = 'image/webp';
+            
+            $imageParts[] = [
+                'inline_data' => [
+                    'mime_type' => $mimeType,
+                    'data' => base64_encode($imageData)
+                ]
+            ];
+        }
+    }
+    $stmt->close();
+    
+    if (empty($imageParts)) {
+        jsonResponse(['error' => '請先上傳照片才能進行分析'], 400);
+    }
+    
+    // 2. Call Gemini API
+    $apiKey = getenv('GEMINI_API_KEY');
+    if (!$apiKey) {
+        jsonResponse(['error' => '未設定 Gemini API Key'], 500);
+    }
+    
+    $prompt = "Analyze these photos to estimate the user's age and suggest 5 relevant categories/tags for this user based on their photo content/style.
+    Return a JSON object with two fields:
+    1. \"age\": A single estimated age number followed by \"歲\" (e.g., \"25歲\").
+    2. \"categories\": An array of 5 short strings (in Traditional Chinese) representing the categories/tags (e.g., [\"攝影\", \"美食\", \"旅遊\", \"貓咪\", \"文青\"]).
+    Return ONLY the JSON object.";
+    
+    $contents = [
+        [
+            'parts' => array_merge([['text' => $prompt]], $imageParts)
+        ]
+    ];
+    
+    $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}";
+    
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['contents' => $contents]));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    
+    if ($httpCode !== 200) {
+        error_log("Gemini API Error: " . $response);
+        jsonResponse(['error' => 'AI 分析失敗'], 500);
+    }
+    
+    $result = json_decode($response, true);
+    $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? '{}';
+    $text = str_replace(['```json', '```'], '', $text);
+    $jsonResult = json_decode($text, true);
+    
+    $age = $jsonResult['age'] ?? '未知';
+    $categories = isset($jsonResult['categories']) ? json_encode($jsonResult['categories'], JSON_UNESCAPED_UNICODE) : '[]';
+    
+    // 3. Update DB
+    $stmt = $conn->prepare("UPDATE users SET ai_estimated_age = ?, ai_tags = ? WHERE id = ?");
+    $stmt->bind_param("ssi", $age, $categories, $userId);
+    
+    if ($stmt->execute()) {
+        jsonResponse(['success' => true, 'age' => $age, 'categories' => json_decode($categories)]);
+    } else {
+        jsonResponse(['error' => '更新資料失敗'], 500);
+    }
     $stmt->close();
 }
 ?>

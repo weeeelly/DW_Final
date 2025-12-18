@@ -1480,44 +1480,44 @@ a:hover {
         padding: 40px 20px;
         gap: 24px;
     }
-    
+
     .profile-avatar {
         width: 120px;
         height: 120px;
         font-size: 3rem;
     }
-    
+
     .profile-stats {
         justify-content: center;
     }
-    
+
     .profile-actions {
         justify-content: center;
     }
-    
+
     .profile-content {
         padding: 20px;
     }
-    
+
     .photo-detail-view {
         flex-direction: column;
         max-height: none;
     }
-    
+
     .photo-detail-image {
         max-width: 100%;
     }
-    
+
     .photo-detail-sidebar {
         width: 100%;
     }
-    
+
     .user-card {
         flex-direction: column;
         align-items: flex-start;
         gap: 12px;
     }
-    
+
     .user-actions {
         width: 100%;
         justify-content: flex-end;
@@ -1615,11 +1615,25 @@ a:hover {
     margin: 0 auto 8px;
 }
 
-.filter-preview.grayscale { filter: grayscale(100%); }
-.filter-preview.sepia { filter: sepia(100%); }
-.filter-preview.blur { filter: blur(2px); }
-.filter-preview.bright { filter: brightness(1.3) contrast(1.2); }
-.filter-preview.hue { filter: hue-rotate(90deg); }
+.filter-preview.grayscale {
+    filter: grayscale(100%);
+}
+
+.filter-preview.sepia {
+    filter: sepia(100%);
+}
+
+.filter-preview.blur {
+    filter: blur(2px);
+}
+
+.filter-preview.bright {
+    filter: brightness(1.3) contrast(1.2);
+}
+
+.filter-preview.hue {
+    filter: hue-rotate(90deg);
+}
 
 .filter-item span {
     font-size: 0.85rem;
@@ -1791,7 +1805,7 @@ a:hover {
     user-select: none;
     pointer-events: all;
     z-index: 10;
-    text-shadow: 0 0 4px rgba(0,0,0,0.3);
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
 }
 
 .placed-sticker:hover {
@@ -1803,34 +1817,168 @@ a:hover {
     .modal-xl {
         max-width: 95%;
     }
-    
+
     .filter-grid {
         grid-template-columns: repeat(3, 1fr);
         gap: 8px;
     }
-    
+
     .filter-preview {
         width: 50px;
         height: 50px;
     }
-    
+
     .sticker-item {
         font-size: 1.5rem;
         padding: 6px;
     }
-    
+
     .sticker-controls {
         flex-direction: column;
         align-items: stretch;
         gap: 8px;
     }
-    
+
     .image-container {
         padding: 10px;
     }
-    
+
     #editImage {
         max-height: 300px;
     }
 }
 
+/* ==================== Photo Roulette ==================== */
+.roulette-section {
+    background: var(--surface-color);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 30px;
+    border: 1px solid var(--border-color);
+    text-align: center;
+}
+
+.roulette-section h2 {
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    color: var(--text-primary);
+}
+
+.roulette-game {
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.roulette-photo-container {
+    width: 100%;
+    max-width: 400px;
+    height: 300px;
+    margin: 0 auto 20px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.roulette-photo-container img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.roulette-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.option-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px;
+    background: var(--surface-light);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.option-btn:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.user-avatar-small {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--secondary-color);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.roulette-result h3 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+}
+
+.roulette-result p {
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+}
+
+.success-text {
+    color: var(--success-color);
+}
+
+.error-text {
+    color: var(--error-color);
+}
+
+
+/* AI Profile Info */
+.ai-profile-info {
+    margin: 15px 0;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color);
+}
+
+.ai-age-badge {
+    font-weight: bold;
+    color: var(--secondary-color);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.ai-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ai-tag {
+    background: var(--surface-light);
+    color: var(--text-secondary);
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    border: 1px solid var(--border-color);
+}

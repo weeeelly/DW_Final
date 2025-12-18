@@ -27,6 +27,30 @@ $username = getCurrentUsername();
         </header>
         
         <div class="friends-container">
+            <!-- Photo Roulette -->
+            <div class="roulette-section">
+                <h2>🎲 Photo Roulette</h2>
+                <div id="rouletteGame" class="roulette-game">
+                    <div class="roulette-start">
+                        <p>猜猜這張照片是哪位好友拍的？</p>
+                        <button class="btn btn-primary" onclick="startRoulette()">開始遊戲</button>
+                    </div>
+                    <div class="roulette-play" style="display: none;">
+                        <div class="roulette-photo-container">
+                            <img id="rouletteImage" src="" alt="Mystery Photo">
+                        </div>
+                        <div class="roulette-options" id="rouletteOptions">
+                            <!-- Options will be injected here -->
+                        </div>
+                    </div>
+                    <div class="roulette-result" style="display: none;">
+                        <h3 id="rouletteResultTitle"></h3>
+                        <p id="rouletteResultText"></p>
+                        <button class="btn btn-secondary" onclick="startRoulette()">再玩一次</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- 搜尋區 -->
             <div class="search-section">
                 <h2>🔍 尋找好友</h2>
@@ -268,6 +292,72 @@ $username = getCurrentUsername();
                 }
             } catch (error) {
                 showToast('操作失敗', 'error');
+            }
+        }
+
+        // Photo Roulette Logic
+        async function startRoulette() {
+            const gameContainer = document.getElementById('rouletteGame');
+            const startDiv = gameContainer.querySelector('.roulette-start');
+            const playDiv = gameContainer.querySelector('.roulette-play');
+            const resultDiv = gameContainer.querySelector('.roulette-result');
+            
+            startDiv.style.display = 'none';
+            resultDiv.style.display = 'none';
+            playDiv.style.display = 'block';
+            playDiv.innerHTML = '<p>載入中...</p>';
+            
+            try {
+                const response = await fetch('api.php?action=get_photo_roulette');
+                const data = await response.json();
+                
+                if (data.error) {
+                    playDiv.innerHTML = `<p class="error-text">${data.error}</p>`;
+                    setTimeout(() => {
+                        playDiv.style.display = 'none';
+                        startDiv.style.display = 'block';
+                    }, 3000);
+                    return;
+                }
+                
+                playDiv.innerHTML = `
+                    <div class="roulette-photo-container">
+                        <img src="${data.photo.image_url}" alt="Mystery Photo">
+                    </div>
+                    <div class="roulette-options">
+                        ${data.options.map(user => `
+                            <button class="btn btn-outline option-btn" onclick="checkRouletteAnswer(${user.id}, ${data.correct_user_id}, '${escapeHtml(user.username).replace(/'/g, "\\'")}')">
+                                <div class="user-avatar-small">${user.username.charAt(0).toUpperCase()}</div>
+                                <span>${escapeHtml(user.username)}</span>
+                            </button>
+                        `).join('')}
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error(error);
+                playDiv.innerHTML = '<p class="error-text">發生錯誤，請稍後再試</p>';
+            }
+        }
+
+        function checkRouletteAnswer(selectedId, correctId, selectedName) {
+            const gameContainer = document.getElementById('rouletteGame');
+            const playDiv = gameContainer.querySelector('.roulette-play');
+            const resultDiv = gameContainer.querySelector('.roulette-result');
+            const resultTitle = document.getElementById('rouletteResultTitle');
+            const resultText = document.getElementById('rouletteResultText');
+            
+            playDiv.style.display = 'none';
+            resultDiv.style.display = 'block';
+            
+            if (selectedId === correctId) {
+                resultTitle.textContent = '🎉 答對了！';
+                resultTitle.className = 'success-text';
+                resultText.textContent = `沒錯，這就是 ${selectedName} 的照片！`;
+            } else {
+                resultTitle.textContent = '❌ 答錯了...';
+                resultTitle.className = 'error-text';
+                resultText.textContent = `可惜，這不是 ${selectedName} 的照片。`;
             }
         }
         
