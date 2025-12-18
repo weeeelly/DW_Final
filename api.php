@@ -1,7 +1,6 @@
 <?php
 require_once 'config.php';
 
-// 確保使用者已登入
 if (!isLoggedIn()) {
     jsonResponse(['error' => '請先登入'], 401);
 }
@@ -11,7 +10,6 @@ $userId = getCurrentUserId();
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 
 switch ($action) {
-    // ==================== 照片相關 ====================
     
     case 'get_photos':
         getPhotos($conn, $userId);
@@ -37,8 +35,6 @@ switch ($action) {
         updateEditedImage($conn, $userId);
         break;
     
-    // ==================== 相簿相關 ====================
-    
     case 'get_albums':
         getAlbums($conn, $userId);
         break;
@@ -54,8 +50,6 @@ switch ($action) {
     case 'delete_album':
         deleteAlbum($conn, $userId);
         break;
-    
-    // ==================== 好友相關 ====================
     
     case 'search_users':
         searchUsers($conn, $userId);
@@ -101,13 +95,9 @@ switch ($action) {
         analyzeUserProfile($conn, $userId);
         break;
     
-    // ==================== 遊戲相關 ====================
-    
     case 'get_game_friends_data':
         getGameFriendsData($conn, $userId);
         break;
-    
-    // ==================== 按讚相關 ====================
     
     case 'toggle_like':
         toggleLike($conn, $userId);
@@ -116,8 +106,6 @@ switch ($action) {
     case 'get_likes':
         getLikes($conn, $userId);
         break;
-    
-    // ==================== 留言相關 ====================
     
     case 'get_comments':
         getComments($conn, $userId);
@@ -137,13 +125,10 @@ switch ($action) {
 
 $conn->close();
 
-// ==================== 照片功能實作 ====================
-
 function getPhotos($conn, $userId) {
     $albumId = $_GET['album_id'] ?? null;
     
     if ($albumId) {
-        // 取得特定相簿的照片
         $stmt = $conn->prepare("
             SELECT p.*, a.name as album_name 
             FROM photos p 
@@ -153,7 +138,6 @@ function getPhotos($conn, $userId) {
         ");
         $stmt->bind_param("ii", $userId, $albumId);
     } else {
-        // 取得所有照片
         $stmt = $conn->prepare("
             SELECT p.*, a.name as album_name 
             FROM photos p 
@@ -180,7 +164,6 @@ function addPhoto($conn, $userId) {
     $caption = trim($_POST['caption'] ?? '');
     $albumId = intval($_POST['album_id'] ?? 0);
     
-    // 處理檔案上傳
     if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
         jsonResponse(['error' => '請選擇要上傳的圖片'], 400);
     }
@@ -192,7 +175,6 @@ function addPhoto($conn, $userId) {
         jsonResponse(['error' => '圖片上傳失敗'], 500);
     }
     
-    // 驗證相簿是否屬於該使用者
     $stmt = $conn->prepare("SELECT id FROM albums WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $albumId, $userId);
     $stmt->execute();
@@ -201,14 +183,12 @@ function addPhoto($conn, $userId) {
     }
     $stmt->close();
     
-    // 新增照片
     $stmt = $conn->prepare("INSERT INTO photos (user_id, album_id, image_url, caption) VALUES (?, ?, ?, ?)");
     $stmt->bind_param("iiss", $userId, $albumId, $imageUrl, $caption);
     
     if ($stmt->execute()) {
         $photoId = $stmt->insert_id;
         
-        // 取得完整的照片資料
         $stmt2 = $conn->prepare("
             SELECT p.*, a.name as album_name 
             FROM photos p 
@@ -228,38 +208,30 @@ function addPhoto($conn, $userId) {
     $stmt->close();
 }
 
-// 處理檔案上傳
 function handleFileUpload($file, $userId) {
-    // 允許的檔案類型
     $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    $maxSize = 10 * 1024 * 1024; // 10MB
+    $maxSize = 10 * 1024 * 1024;
     
-    // 驗證檔案類型
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $file['tmp_name']);
-    // finfo_close($finfo); // Deprecated in PHP 8.5+
     
     if (!in_array($mimeType, $allowedTypes)) {
         jsonResponse(['error' => '不支援的檔案格式，請上傳 JPG、PNG、GIF 或 WebP 圖片'], 400);
     }
     
-    // 驗證檔案大小
     if ($file['size'] > $maxSize) {
         jsonResponse(['error' => '檔案大小超過限制（最大 10MB）'], 400);
     }
     
-    // 建立使用者專屬目錄
     $uploadDir = __DIR__ . '/uploads/' . $userId . '/';
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }
     
-    // 生成唯一檔名
     $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
     $newFileName = uniqid('img_', true) . '.' . strtolower($extension);
     $targetPath = $uploadDir . $newFileName;
     
-    // 移動檔案
     if (move_uploaded_file($file['tmp_name'], $targetPath)) {
         return 'uploads/' . $userId . '/' . $newFileName;
     }
@@ -272,7 +244,6 @@ function updatePhoto($conn, $userId) {
     $caption = trim($_POST['caption'] ?? '');
     $albumId = intval($_POST['album_id'] ?? 0);
     
-    // 驗證照片是否屬於該使用者，並取得舊圖片路徑
     $stmt = $conn->prepare("SELECT id, image_url FROM photos WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $photoId, $userId);
     $stmt->execute();
@@ -284,7 +255,6 @@ function updatePhoto($conn, $userId) {
     $oldImageUrl = $oldPhoto['image_url'];
     $stmt->close();
     
-    // 驗證相簿是否屬於該使用者
     $stmt = $conn->prepare("SELECT id FROM albums WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $albumId, $userId);
     $stmt->execute();
@@ -293,7 +263,6 @@ function updatePhoto($conn, $userId) {
     }
     $stmt->close();
     
-    // 檢查是否有新圖片上傳
     $imageUrl = $oldImageUrl;
     if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
         $file = $_FILES['image'];
@@ -302,7 +271,6 @@ function updatePhoto($conn, $userId) {
         if ($newImageUrl) {
             $imageUrl = $newImageUrl;
             
-            // 刪除舊圖片（如果是本地檔案）
             if (strpos($oldImageUrl, 'uploads/') === 0) {
                 $oldFilePath = __DIR__ . '/' . $oldImageUrl;
                 if (file_exists($oldFilePath)) {
@@ -312,12 +280,10 @@ function updatePhoto($conn, $userId) {
         }
     }
     
-    // 更新照片
     $stmt = $conn->prepare("UPDATE photos SET caption = ?, album_id = ?, image_url = ? WHERE id = ? AND user_id = ?");
     $stmt->bind_param("sisii", $caption, $albumId, $imageUrl, $photoId, $userId);
     
     if ($stmt->execute()) {
-        // 取得更新後的照片資料
         $stmt2 = $conn->prepare("
             SELECT p.*, a.name as album_name 
             FROM photos p 
@@ -340,7 +306,6 @@ function updatePhoto($conn, $userId) {
 function deletePhoto($conn, $userId) {
     $photoId = intval($_POST['photo_id'] ?? 0);
     
-    // 驗證照片是否屬於該使用者，並取得圖片路徑
     $stmt = $conn->prepare("SELECT id, image_url FROM photos WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $photoId, $userId);
     $stmt->execute();
@@ -352,12 +317,10 @@ function deletePhoto($conn, $userId) {
     $imageUrl = $photo['image_url'];
     $stmt->close();
     
-    // 刪除照片記錄
     $stmt = $conn->prepare("DELETE FROM photos WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $photoId, $userId);
     
     if ($stmt->execute()) {
-        // 刪除本地圖片檔案
         if (strpos($imageUrl, 'uploads/') === 0) {
             $filePath = __DIR__ . '/' . $imageUrl;
             if (file_exists($filePath)) {
@@ -372,8 +335,6 @@ function deletePhoto($conn, $userId) {
     
     $stmt->close();
 }
-
-// ==================== 相簿功能實作 ====================
 
 function getAlbums($conn, $userId) {
     $stmt = $conn->prepare("
@@ -407,7 +368,6 @@ function addAlbum($conn, $userId) {
         jsonResponse(['error' => '相簿名稱過長'], 400);
     }
     
-    // 檢查是否已存在同名相簿
     $stmt = $conn->prepare("SELECT id FROM albums WHERE user_id = ? AND name = ?");
     $stmt->bind_param("is", $userId, $albumName);
     $stmt->execute();
@@ -416,7 +376,6 @@ function addAlbum($conn, $userId) {
     }
     $stmt->close();
     
-    // 新增相簿
     $stmt = $conn->prepare("INSERT INTO albums (user_id, name, is_default) VALUES (?, ?, FALSE)");
     $stmt->bind_param("is", $userId, $albumName);
     
@@ -446,7 +405,6 @@ function updateAlbum($conn, $userId) {
         jsonResponse(['error' => '請輸入相簿名稱'], 400);
     }
     
-    // 驗證相簿是否屬於該使用者且不是預設相簿
     $stmt = $conn->prepare("SELECT id, is_default FROM albums WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $albumId, $userId);
     $stmt->execute();
@@ -462,7 +420,6 @@ function updateAlbum($conn, $userId) {
     }
     $stmt->close();
     
-    // 檢查是否已存在同名相簿（排除自己）
     $stmt = $conn->prepare("SELECT id FROM albums WHERE user_id = ? AND name = ? AND id != ?");
     $stmt->bind_param("isi", $userId, $albumName, $albumId);
     $stmt->execute();
@@ -471,7 +428,6 @@ function updateAlbum($conn, $userId) {
     }
     $stmt->close();
     
-    // 更新相簿
     $stmt = $conn->prepare("UPDATE albums SET name = ? WHERE id = ? AND user_id = ?");
     $stmt->bind_param("sii", $albumName, $albumId, $userId);
     
@@ -487,7 +443,6 @@ function updateAlbum($conn, $userId) {
 function deleteAlbum($conn, $userId) {
     $albumId = intval($_POST['album_id'] ?? 0);
     
-    // 驗證相簿是否屬於該使用者且不是預設相簿
     $stmt = $conn->prepare("SELECT id, is_default, name FROM albums WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $albumId, $userId);
     $stmt->execute();
@@ -503,7 +458,6 @@ function deleteAlbum($conn, $userId) {
     }
     $stmt->close();
     
-    // 刪除相簿（照片會透過外鍵約束自動刪除）
     $stmt = $conn->prepare("DELETE FROM albums WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $albumId, $userId);
     
@@ -519,7 +473,6 @@ function deleteAlbum($conn, $userId) {
 function analyzePhoto($conn, $userId) {
     $photoId = intval($_POST['photo_id'] ?? 0);
     
-    // 取得照片資訊
     $stmt = $conn->prepare("SELECT image_url FROM photos WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $photoId, $userId);
     $stmt->execute();
@@ -533,19 +486,15 @@ function analyzePhoto($conn, $userId) {
     $imageUrl = $photo['image_url'];
     $stmt->close();
     
-    // 取得 Gemini API Key
     $apiKey = getenv('GEMINI_API_KEY');
     if (!$apiKey) {
         jsonResponse(['error' => '未設定 Gemini API Key'], 500);
     }
     
-    // 讀取圖片內容並轉為 Base64
     $imageData = '';
     if (filter_var($imageUrl, FILTER_VALIDATE_URL)) {
-        // 如果是外部 URL
         $imageData = file_get_contents($imageUrl);
     } else {
-        // 如果是本地檔案
         $localPath = __DIR__ . '/' . $imageUrl;
         if (file_exists($localPath)) {
             $imageData = file_get_contents($localPath);
@@ -557,13 +506,11 @@ function analyzePhoto($conn, $userId) {
     }
     
     $base64Image = base64_encode($imageData);
-    $mimeType = 'image/jpeg'; // 預設，實際應偵測
+    $mimeType = 'image/jpeg';
     
-    // 簡單偵測 MIME Type
     if (strpos($imageUrl, '.png') !== false) $mimeType = 'image/png';
     if (strpos($imageUrl, '.webp') !== false) $mimeType = 'image/webp';
     
-    // 呼叫 Gemini API
     $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={$apiKey}";
     
     $data = [
@@ -594,10 +541,8 @@ function analyzePhoto($conn, $userId) {
     
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    // curl_close($ch); // Deprecated in PHP 8.5+
     
     if ($httpCode !== 200) {
-        // Log error for debugging
         error_log("Gemini API Error: HTTP $httpCode - Response: $response");
         jsonResponse(['error' => 'AI 分析失敗', 'details' => json_decode($response, true) ?? $response], 500);
     }
@@ -605,14 +550,12 @@ function analyzePhoto($conn, $userId) {
     $result = json_decode($response, true);
     $text = $result['candidates'][0]['content']['parts'][0]['text'] ?? '{}';
     
-    // Clean up markdown code blocks if present
     $text = str_replace(['```json', '```'], '', $text);
     $jsonResult = json_decode($text, true);
     
     $age = $jsonResult['age'] ?? '未知';
     $reason = $jsonResult['reason'] ?? '無法分析';
 
-    // Update database with analysis result
     $updateStmt = $conn->prepare("UPDATE photos SET ai_analysis = ?, ai_explanation = ? WHERE id = ?");
     $updateStmt->bind_param("ssi", $age, $reason, $photoId);
     $updateStmt->execute();
@@ -623,8 +566,7 @@ function analyzePhoto($conn, $userId) {
 
 function updateEditedImage($conn, $userId) {
     $photoId = intval($_POST['photo_id'] ?? 0);
-    
-    // 驗證照片是否屬於該使用者，並取得舊圖片路徑
+
     $stmt = $conn->prepare("SELECT id, image_url FROM photos WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $photoId, $userId);
     $stmt->execute();
@@ -636,14 +578,12 @@ function updateEditedImage($conn, $userId) {
     $oldImageUrl = $oldPhoto['image_url'];
     $stmt->close();
     
-    // 檢查是否有編輯後的圖片
     if (!isset($_FILES['edited_image']) || $_FILES['edited_image']['error'] !== UPLOAD_ERR_OK) {
         jsonResponse(['error' => '沒有收到編輯後的圖片'], 400);
     }
     
     $file = $_FILES['edited_image'];
     
-    // 驗證檔案類型
     $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     $finfo = finfo_open(FILEINFO_MIME_TYPE);
     $mimeType = finfo_file($finfo, $file['tmp_name']);
@@ -653,37 +593,31 @@ function updateEditedImage($conn, $userId) {
         jsonResponse(['error' => '不支援的檔案類型'], 400);
     }
     
-    // 驗證檔案大小 (10MB)
     if ($file['size'] > 10 * 1024 * 1024) {
         jsonResponse(['error' => '檔案大小不能超過 10MB'], 400);
     }
     
-    // 創建使用者上傳目錄
     $uploadDir = __DIR__ . "/uploads/{$userId}";
     if (!is_dir($uploadDir)) {
         mkdir($uploadDir, 0755, true);
     }
     
-    // 生成唯一檔名 (保持編輯標記)
-    $extension = 'jpg'; // 統一使用 jpg
+    $extension = 'jpg';
     $timestamp = time();
     $random = bin2hex(random_bytes(8));
     $newFileName = "edited_{$timestamp}_{$random}.{$extension}";
     $newFilePath = "{$uploadDir}/{$newFileName}";
     
-    // 移動檔案
     if (!move_uploaded_file($file['tmp_name'], $newFilePath)) {
         jsonResponse(['error' => '檔案上傳失敗'], 500);
     }
     
     $newImageUrl = "uploads/{$userId}/{$newFileName}";
     
-    // 更新資料庫
     $stmt = $conn->prepare("UPDATE photos SET image_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?");
     $stmt->bind_param("sii", $newImageUrl, $photoId, $userId);
     
     if ($stmt->execute()) {
-        // 刪除舊圖片檔案（如果是本地檔案且不同）
         if (strpos($oldImageUrl, 'uploads/') === 0 && $oldImageUrl !== $newImageUrl) {
             $oldFilePath = __DIR__ . '/' . $oldImageUrl;
             if (file_exists($oldFilePath)) {
@@ -698,8 +632,6 @@ function updateEditedImage($conn, $userId) {
     
     $stmt->close();
 }
-
-// ==================== 好友功能實作 ====================
 
 function searchUsers($conn, $userId) {
     $query = trim($_GET['query'] ?? '');
@@ -723,7 +655,6 @@ function searchUsers($conn, $userId) {
     
     $users = [];
     while ($row = $result->fetch_assoc()) {
-        // 判斷好友狀態
         if ($row['friendship_status'] === 'accepted' || $row['reverse_status'] === 'accepted') {
             $row['relation'] = 'friend';
         } elseif ($row['friendship_status'] === 'pending') {
@@ -790,7 +721,6 @@ function sendFriendRequest($conn, $userId) {
         jsonResponse(['error' => '不能加自己為好友'], 400);
     }
     
-    // 檢查使用者是否存在
     $stmt = $conn->prepare("SELECT id FROM users WHERE id = ?");
     $stmt->bind_param("i", $friendId);
     $stmt->execute();
@@ -799,7 +729,6 @@ function sendFriendRequest($conn, $userId) {
     }
     $stmt->close();
     
-    // 檢查是否已經是好友或已發送請求
     $stmt = $conn->prepare("SELECT status FROM friendships WHERE user_id = ? AND friend_id = ?");
     $stmt->bind_param("ii", $userId, $friendId);
     $stmt->execute();
@@ -814,7 +743,6 @@ function sendFriendRequest($conn, $userId) {
     }
     $stmt->close();
     
-    // 檢查對方是否已發送請求給我
     $stmt = $conn->prepare("SELECT status FROM friendships WHERE user_id = ? AND friend_id = ?");
     $stmt->bind_param("ii", $friendId, $userId);
     $stmt->execute();
@@ -822,13 +750,11 @@ function sendFriendRequest($conn, $userId) {
     if ($result->num_rows > 0) {
         $existing = $result->fetch_assoc();
         if ($existing['status'] === 'pending') {
-            // 自動接受對方的請求
             $stmt2 = $conn->prepare("UPDATE friendships SET status = 'accepted' WHERE user_id = ? AND friend_id = ?");
             $stmt2->bind_param("ii", $friendId, $userId);
             $stmt2->execute();
             $stmt2->close();
             
-            // 建立反向好友關係
             $stmt3 = $conn->prepare("INSERT INTO friendships (user_id, friend_id, status) VALUES (?, ?, 'accepted')");
             $stmt3->bind_param("ii", $userId, $friendId);
             $stmt3->execute();
@@ -839,7 +765,6 @@ function sendFriendRequest($conn, $userId) {
     }
     $stmt->close();
     
-    // 發送好友請求
     $stmt = $conn->prepare("INSERT INTO friendships (user_id, friend_id, status) VALUES (?, ?, 'pending')");
     $stmt->bind_param("ii", $userId, $friendId);
     
@@ -855,7 +780,6 @@ function sendFriendRequest($conn, $userId) {
 function acceptFriendRequest($conn, $userId) {
     $friendId = intval($_POST['friend_id'] ?? 0);
     
-    // 檢查是否有待處理的請求
     $stmt = $conn->prepare("SELECT id FROM friendships WHERE user_id = ? AND friend_id = ? AND status = 'pending'");
     $stmt->bind_param("ii", $friendId, $userId);
     $stmt->execute();
@@ -864,13 +788,11 @@ function acceptFriendRequest($conn, $userId) {
     }
     $stmt->close();
     
-    // 更新請求狀態
     $stmt = $conn->prepare("UPDATE friendships SET status = 'accepted' WHERE user_id = ? AND friend_id = ?");
     $stmt->bind_param("ii", $friendId, $userId);
     $stmt->execute();
     $stmt->close();
     
-    // 建立反向好友關係
     $stmt = $conn->prepare("INSERT INTO friendships (user_id, friend_id, status) VALUES (?, ?, 'accepted') ON DUPLICATE KEY UPDATE status = 'accepted'");
     $stmt->bind_param("ii", $userId, $friendId);
     $stmt->execute();
@@ -897,7 +819,6 @@ function rejectFriendRequest($conn, $userId) {
 function removeFriend($conn, $userId) {
     $friendId = intval($_POST['friend_id'] ?? 0);
     
-    // 刪除雙向好友關係
     $stmt = $conn->prepare("DELETE FROM friendships WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)");
     $stmt->bind_param("iiii", $userId, $friendId, $friendId, $userId);
     
@@ -913,7 +834,6 @@ function removeFriend($conn, $userId) {
 function getUserProfile($conn, $userId) {
     $targetUserId = intval($_GET['user_id'] ?? 0);
     
-    // 取得使用者資料
     $stmt = $conn->prepare("
         SELECT u.id, u.username, u.bio, u.avatar, u.created_at, u.ai_estimated_age, u.ai_tags,
                (SELECT COUNT(*) FROM photos WHERE user_id = u.id AND is_public = TRUE) as photo_count,
@@ -931,7 +851,6 @@ function getUserProfile($conn, $userId) {
     $user = $result->fetch_assoc();
     $stmt->close();
     
-    // 檢查好友關係
     $stmt = $conn->prepare("SELECT status FROM friendships WHERE user_id = ? AND friend_id = ?");
     $stmt->bind_param("ii", $userId, $targetUserId);
     $stmt->execute();
@@ -941,7 +860,6 @@ function getUserProfile($conn, $userId) {
         $friendship = $friendResult->fetch_assoc();
         $user['relation'] = $friendship['status'] === 'accepted' ? 'friend' : 'pending_sent';
     } else {
-        // 檢查反向
         $stmt2 = $conn->prepare("SELECT status FROM friendships WHERE user_id = ? AND friend_id = ?");
         $stmt2->bind_param("ii", $targetUserId, $userId);
         $stmt2->execute();
@@ -962,7 +880,6 @@ function getUserProfile($conn, $userId) {
 function getUserPhotos($conn, $userId) {
     $targetUserId = intval($_GET['user_id'] ?? 0);
     
-    // 檢查是否是好友或自己
     $isFriend = false;
     $isSelf = ($userId === $targetUserId);
     
@@ -974,7 +891,6 @@ function getUserPhotos($conn, $userId) {
         $stmt->close();
     }
     
-    // 取得照片（好友或自己可以看到所有，否則只能看公開的）
     if ($isSelf || $isFriend) {
         $stmt = $conn->prepare("
             SELECT p.*, a.name as album_name, u.username,
@@ -1016,12 +932,9 @@ function getUserPhotos($conn, $userId) {
     jsonResponse(['photos' => $photos, 'is_friend' => $isFriend, 'is_self' => $isSelf]);
 }
 
-// ==================== 按讚功能實作 ====================
-
 function toggleLike($conn, $userId) {
     $photoId = intval($_POST['photo_id'] ?? 0);
     
-    // 檢查照片是否存在
     $stmt = $conn->prepare("SELECT user_id, is_public FROM photos WHERE id = ?");
     $stmt->bind_param("i", $photoId);
     $stmt->execute();
@@ -1034,7 +947,6 @@ function toggleLike($conn, $userId) {
     $photo = $result->fetch_assoc();
     $stmt->close();
     
-    // 檢查是否有權限按讚（公開照片或是好友的照片）
     if ($photo['user_id'] !== $userId && !$photo['is_public']) {
         $stmt = $conn->prepare("SELECT id FROM friendships WHERE user_id = ? AND friend_id = ? AND status = 'accepted'");
         $stmt->bind_param("ii", $userId, $photo['user_id']);
@@ -1045,7 +957,6 @@ function toggleLike($conn, $userId) {
         $stmt->close();
     }
     
-    // 檢查是否已經按讚
     $stmt = $conn->prepare("SELECT id FROM likes WHERE user_id = ? AND photo_id = ?");
     $stmt->bind_param("ii", $userId, $photoId);
     $stmt->execute();
@@ -1053,14 +964,12 @@ function toggleLike($conn, $userId) {
     $stmt->close();
     
     if ($liked) {
-        // 取消按讚
         $stmt = $conn->prepare("DELETE FROM likes WHERE user_id = ? AND photo_id = ?");
         $stmt->bind_param("ii", $userId, $photoId);
         $stmt->execute();
         $stmt->close();
         $isLiked = false;
     } else {
-        // 按讚
         $stmt = $conn->prepare("INSERT INTO likes (user_id, photo_id) VALUES (?, ?)");
         $stmt->bind_param("ii", $userId, $photoId);
         $stmt->execute();
@@ -1068,7 +977,6 @@ function toggleLike($conn, $userId) {
         $isLiked = true;
     }
     
-    // 取得最新按讚數
     $stmt = $conn->prepare("SELECT COUNT(*) as count FROM likes WHERE photo_id = ?");
     $stmt->bind_param("i", $photoId);
     $stmt->execute();
@@ -1100,8 +1008,6 @@ function getLikes($conn, $userId) {
     $stmt->close();
     jsonResponse(['likes' => $likes]);
 }
-
-// ==================== 留言功能實作 ====================
 
 function getComments($conn, $userId) {
     $photoId = intval($_GET['photo_id'] ?? 0);
@@ -1139,7 +1045,6 @@ function addComment($conn, $userId) {
         jsonResponse(['error' => '留言內容過長'], 400);
     }
     
-    // 檢查照片是否存在
     $stmt = $conn->prepare("SELECT user_id, is_public FROM photos WHERE id = ?");
     $stmt->bind_param("i", $photoId);
     $stmt->execute();
@@ -1152,7 +1057,6 @@ function addComment($conn, $userId) {
     $photo = $result->fetch_assoc();
     $stmt->close();
     
-    // 檢查是否有權限留言
     if ($photo['user_id'] !== $userId && !$photo['is_public']) {
         $stmt = $conn->prepare("SELECT id FROM friendships WHERE user_id = ? AND friend_id = ? AND status = 'accepted'");
         $stmt->bind_param("ii", $userId, $photo['user_id']);
@@ -1163,7 +1067,6 @@ function addComment($conn, $userId) {
         $stmt->close();
     }
     
-    // 新增留言
     $stmt = $conn->prepare("INSERT INTO comments (user_id, photo_id, content) VALUES (?, ?, ?)");
     $stmt->bind_param("iis", $userId, $photoId, $content);
     
@@ -1171,7 +1074,6 @@ function addComment($conn, $userId) {
         $commentId = $stmt->insert_id;
         $stmt->close();
         
-        // 取得新增的留言
         $stmt = $conn->prepare("
             SELECT c.*, u.username, u.avatar
             FROM comments c
@@ -1193,7 +1095,6 @@ function addComment($conn, $userId) {
 function deleteComment($conn, $userId) {
     $commentId = intval($_POST['comment_id'] ?? 0);
     
-    // 驗證留言是否屬於該使用者
     $stmt = $conn->prepare("SELECT id FROM comments WHERE id = ? AND user_id = ?");
     $stmt->bind_param("ii", $commentId, $userId);
     $stmt->execute();
@@ -1202,7 +1103,6 @@ function deleteComment($conn, $userId) {
     }
     $stmt->close();
     
-    // 刪除留言
     $stmt = $conn->prepare("DELETE FROM comments WHERE id = ?");
     $stmt->bind_param("i", $commentId);
     
@@ -1215,11 +1115,8 @@ function deleteComment($conn, $userId) {
     $stmt->close();
 }
 
-// ==================== 遊戲相關函數 ====================
-
 function getGameFriendsData($conn, $userId) {
     try {
-        // 獲取好友列表和他們的照片
         $stmt = $conn->prepare("
             SELECT DISTINCT u.id, u.username, u.avatar
             FROM users u
@@ -1236,7 +1133,6 @@ function getGameFriendsData($conn, $userId) {
         while ($row = $result->fetch_assoc()) {
             $friendId = $row['id'];
             
-            // 為每個好友獲取一張隨機照片
             $photoStmt = $conn->prepare("
                 SELECT image_url, caption 
                 FROM photos 
@@ -1258,7 +1154,6 @@ function getGameFriendsData($conn, $userId) {
     
         $stmt->close();
         
-        // 如果好友數量不足，添加一些預設的測試數據
         $testPhotos = [
             'https://picsum.photos/300/300?random=1',
             'https://picsum.photos/300/300?random=2',
@@ -1288,7 +1183,6 @@ function getGameFriendsData($conn, $userId) {
 }
 
 function getPhotoRoulette($conn, $userId) {
-    // 1. Get a random photo from friends
     $stmt = $conn->prepare("
         SELECT p.id, p.image_url, p.user_id, u.username, u.avatar 
         FROM photos p 
@@ -1311,7 +1205,6 @@ function getPhotoRoulette($conn, $userId) {
     
     $correctUserId = $photo['user_id'];
     
-    // 2. Get 3 distractors (random users, preferably friends, excluding the correct user)
     $distractors = [];
     
     $stmt = $conn->prepare("
@@ -1331,17 +1224,16 @@ function getPhotoRoulette($conn, $userId) {
     }
     $stmt->close();
     
-    // If we don't have enough distractors (less than 3), fetch random users from the system
+    
     if (count($distractors) < 3) {
         $needed = 3 - count($distractors);
-        $excludeIds = [$correctUserId, $userId]; // Exclude correct user and self
+        $excludeIds = [$correctUserId, $userId];
         foreach ($distractors as $d) {
             $excludeIds[] = $d['id'];
         }
         
-        // Create placeholders string like ?,?,?
         $placeholders = implode(',', array_fill(0, count($excludeIds), '?'));
-        $types = str_repeat('i', count($excludeIds)) . 'i'; // types for IN clause + LIMIT
+        $types = str_repeat('i', count($excludeIds)) . 'i';
         $params = array_merge($excludeIds, [$needed]);
         
         $sql = "SELECT id, username, avatar FROM users WHERE id NOT IN ($placeholders) ORDER BY RAND() LIMIT ?";
@@ -1356,7 +1248,6 @@ function getPhotoRoulette($conn, $userId) {
         $stmt->close();
     }
     
-    // 3. Combine and shuffle options
     $options = $distractors;
     $options[] = [
         'id' => $photo['user_id'],
@@ -1377,7 +1268,6 @@ function getPhotoRoulette($conn, $userId) {
 }
 
 function analyzeUserProfile($conn, $userId) {
-    // 1. Get user's photos (limit 10)
     $stmt = $conn->prepare("SELECT image_url FROM photos WHERE user_id = ? ORDER BY created_at DESC LIMIT 10");
     $stmt->bind_param("i", $userId);
     $stmt->execute();
@@ -1416,7 +1306,6 @@ function analyzeUserProfile($conn, $userId) {
         jsonResponse(['error' => '請先上傳照片才能進行分析'], 400);
     }
     
-    // 2. Call Gemini API
     $apiKey = getenv('GEMINI_API_KEY');
     if (!$apiKey) {
         jsonResponse(['error' => '未設定 Gemini API Key'], 500);
@@ -1458,7 +1347,6 @@ function analyzeUserProfile($conn, $userId) {
     $age = $jsonResult['age'] ?? '未知';
     $categories = isset($jsonResult['categories']) ? json_encode($jsonResult['categories'], JSON_UNESCAPED_UNICODE) : '[]';
     
-    // 3. Update DB
     $stmt = $conn->prepare("UPDATE users SET ai_estimated_age = ?, ai_tags = ? WHERE id = ?");
     $stmt->bind_param("ssi", $age, $categories, $userId);
     

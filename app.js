@@ -1,35 +1,25 @@
-/**
- * Photo Rewind - 照片日記前端邏輯
- */
-
-// ==================== 全域變數 ====================
 let currentAlbumId = null;
 let currentPhotoId = null;
 let deleteTarget = null;
 
-// ==================== 初始化 ====================
 document.addEventListener('DOMContentLoaded', () => {
     initEventListeners();
     loadPhotos();
 });
 
 function initEventListeners() {
-    // 側邊欄相簿點擊
     document.querySelectorAll('.album-item').forEach(item => {
         item.addEventListener('click', handleAlbumClick);
     });
 
-    // 新增照片按鈕
     document.getElementById('addPhotoBtn').addEventListener('click', () => {
         openPhotoModal();
     });
 
-    // 新增相簿按鈕
     document.getElementById('addAlbumBtn').addEventListener('click', () => {
         openAlbumModal();
     });
 
-    // 遊戲按鈕
     const startGameBtn = document.getElementById('startGameBtn');
     if (startGameBtn) {
         startGameBtn.addEventListener('click', () => {
@@ -39,16 +29,12 @@ function initEventListeners() {
         });
     }
 
-    // 照片表單提交
     document.getElementById('photoForm').addEventListener('submit', handlePhotoSubmit);
 
-    // 相簿表單提交
     document.getElementById('albumForm').addEventListener('submit', handleAlbumSubmit);
 
-    // 圖片檔案選擇預覽
     document.getElementById('imageFile').addEventListener('change', handleFileSelect);
 
-    // 拖曳上傳
     const fileWrapper = document.querySelector('.file-upload-wrapper');
     if (fileWrapper) {
         fileWrapper.addEventListener('dragover', handleDragOver);
@@ -56,17 +42,14 @@ function initEventListeners() {
         fileWrapper.addEventListener('drop', handleDrop);
     }
 
-    // Modal 關閉
     document.querySelectorAll('.modal-close, .modal-cancel, .modal-overlay').forEach(el => {
         el.addEventListener('click', closeAllModals);
     });
 
-    // 防止 modal 內容點擊關閉
     document.querySelectorAll('.modal-content').forEach(el => {
         el.addEventListener('click', e => e.stopPropagation());
     });
 
-    // 檢視照片 Modal 的操作
     document.getElementById('editPhotoFromView').addEventListener('click', () => {
         closeModal('viewPhotoModal');
         openPhotoModal(currentPhotoId);
@@ -82,13 +65,10 @@ function initEventListeners() {
         openImageEditor(currentPhotoId);
     });
 
-    // 確認刪除
     document.getElementById('confirmDeleteBtn').addEventListener('click', handleConfirmDelete);
 
-    // 手機版選單
     document.getElementById('mobileMenuBtn').addEventListener('click', toggleSidebar);
 
-    // 編輯/刪除相簿按鈕
     document.querySelectorAll('.edit-album-btn').forEach(btn => {
         btn.addEventListener('click', handleEditAlbumClick);
     });
@@ -97,11 +77,9 @@ function initEventListeners() {
         btn.addEventListener('click', handleDeleteAlbumClick);
     });
 
-    // 圖片編輯器事件監聽
     setupImageEditor();
 }
 
-// ==================== 照片功能 ====================
 async function loadPhotos(albumId = null) {
     const photoGrid = document.getElementById('photoGrid');
     const emptyState = document.getElementById('emptyState');
@@ -170,7 +148,6 @@ function renderPhotos(photos) {
         </div>
     `).join('');
 
-    // 綁定照片卡片事件
     photoGrid.querySelectorAll('.photo-card').forEach(card => {
         const photoId = card.dataset.photoId;
 
@@ -194,7 +171,6 @@ function renderPhotos(photos) {
             openImageEditor(photoId);
         });
 
-        // 點擊卡片檢視詳細資訊
         card.addEventListener('click', () => viewPhoto(photoId));
     });
 }
@@ -220,7 +196,6 @@ async function analyzePhoto(photoId) {
         if (data.error) {
             showToast(data.error, 'error');
         } else {
-            // Update UI with analysis result
             const card = document.querySelector(`.photo-card[data-photo-id="${photoId}"]`);
             const cardImage = card.querySelector('.photo-card-image');
             let badge = cardImage.querySelector('.ai-badge');
@@ -228,14 +203,12 @@ async function analyzePhoto(photoId) {
             if (!badge) {
                 badge = document.createElement('div');
                 badge.className = 'ai-badge';
-                // Insert before overlay
                 const overlay = cardImage.querySelector('.photo-card-overlay');
                 cardImage.insertBefore(badge, overlay);
             }
 
             badge.textContent = `照片年齡：${data.age_analysis}`;
 
-            // Update data attributes
             card.dataset.aiAge = data.age_analysis;
             card.dataset.aiExplanation = data.ai_explanation;
 
@@ -259,7 +232,6 @@ function viewPhoto(photoId) {
     const album = photoCard.querySelector('.photo-card-album').textContent;
     const date = photoCard.querySelector('.photo-card-date').textContent;
 
-    // AI Analysis Data
     const aiAge = photoCard.dataset.aiAge;
     const aiExplanation = photoCard.dataset.aiExplanation;
 
@@ -268,7 +240,6 @@ function viewPhoto(photoId) {
     document.getElementById('viewPhotoAlbum').textContent = `📁 ${album}`;
     document.getElementById('viewPhotoDate').textContent = `📅 ${date}`;
 
-    // Show/Hide AI Result Section
     const aiSection = document.getElementById('viewPhotoAiResult');
     if (aiAge && aiExplanation) {
         document.getElementById('viewPhotoAge').textContent = aiAge;
@@ -291,7 +262,6 @@ function openPhotoModal(photoId = null) {
     document.getElementById('imagePreview').innerHTML = '<span class="preview-placeholder">選擇圖片後預覽</span>';
     document.getElementById('fileName').textContent = '';
 
-    // 重置檔案輸入
     const fileInput = document.getElementById('imageFile');
     fileInput.value = '';
 
@@ -299,10 +269,8 @@ function openPhotoModal(photoId = null) {
         title.textContent = '編輯照片';
         document.getElementById('photoId').value = photoId;
 
-        // 編輯時圖片不是必填（保留原圖）
         fileInput.removeAttribute('required');
 
-        // 從 DOM 取得照片資料
         const photoCard = document.querySelector(`[data-photo-id="${photoId}"]`);
         if (photoCard) {
             const img = photoCard.querySelector('img');
@@ -311,11 +279,9 @@ function openPhotoModal(photoId = null) {
 
             document.getElementById('caption').value = caption !== '無描述' ? caption : '';
 
-            // 顯示目前圖片預覽
             document.getElementById('imagePreview').innerHTML = `<img src="${img.src}" alt="">`;
             document.getElementById('fileName').textContent = '（保留目前圖片，或選擇新圖片替換）';
 
-            // 選擇相簿
             const albumSelect = document.getElementById('albumSelect');
             for (let option of albumSelect.options) {
                 if (option.text === albumName) {
@@ -327,9 +293,7 @@ function openPhotoModal(photoId = null) {
     } else {
         title.textContent = '新增照片';
         document.getElementById('photoId').value = '';
-        // 新增時圖片必填
         fileInput.setAttribute('required', 'required');
-        // 預設選擇 Recents
         document.getElementById('albumSelect').value = APP_DATA.defaultAlbumId;
     }
 
@@ -344,7 +308,6 @@ async function handlePhotoSubmit(e) {
     const photoId = formData.get('photo_id');
     const fileInput = document.getElementById('imageFile');
 
-    // 新增照片時必須有圖片
     if (!photoId && (!fileInput.files || fileInput.files.length === 0)) {
         showToast('請選擇要上傳的圖片', 'error');
         return;
@@ -352,7 +315,6 @@ async function handlePhotoSubmit(e) {
 
     formData.append('action', photoId ? 'update_photo' : 'add_photo');
 
-    // 顯示上傳中狀態
     const submitBtn = form.querySelector('button[type="submit"]');
     const originalText = submitBtn.textContent;
     submitBtn.textContent = '上傳中...';
@@ -383,7 +345,6 @@ async function handlePhotoSubmit(e) {
     }
 }
 
-// 處理檔案選擇
 function handleFileSelect(e) {
     const file = e.target.files[0];
     if (file) {
@@ -391,12 +352,10 @@ function handleFileSelect(e) {
     }
 }
 
-// 預覽選擇的檔案
 function previewFile(file) {
     const preview = document.getElementById('imagePreview');
     const fileNameSpan = document.getElementById('fileName');
 
-    // 驗證檔案類型
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
         preview.innerHTML = '<span class="preview-placeholder">不支援的檔案格式</span>';
@@ -406,7 +365,6 @@ function previewFile(file) {
         return;
     }
 
-    // 驗證檔案大小 (10MB)
     if (file.size > 10 * 1024 * 1024) {
         preview.innerHTML = '<span class="preview-placeholder">檔案太大</span>';
         fileNameSpan.textContent = '';
@@ -415,24 +373,18 @@ function previewFile(file) {
         return;
     }
 
-    // 顯示檔名
     fileNameSpan.textContent = file.name;
 
-    // 預覽圖片
     const reader = new FileReader();
     reader.onload = (e) => {
-        // 完全清空預覽區域，移除任何美編後的樣式
         preview.innerHTML = '';
 
-        // 創建新的圖片元素
         const newImg = document.createElement('img');
         newImg.src = e.target.result;
         newImg.alt = '預覽';
 
-        // 添加到預覽區域
         preview.appendChild(newImg);
 
-        // 顯示美編按鈕
         const designBtn = document.getElementById('openDesignBtn');
         if (designBtn) {
             designBtn.style.display = 'inline-block';
@@ -441,7 +393,6 @@ function previewFile(file) {
     reader.readAsDataURL(file);
 }
 
-// 拖曳上傳處理
 function handleDragOver(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -493,26 +444,21 @@ async function deletePhoto(photoId) {
     }
 }
 
-// ==================== 相簿功能 ====================
 function handleAlbumClick(e) {
-    // 如果點擊的是編輯或刪除按鈕，不處理
     if (e.target.closest('.album-actions')) return;
 
     const albumItem = e.currentTarget;
     const albumId = albumItem.dataset.albumId;
     const albumName = albumItem.dataset.albumName;
 
-    // 更新選中狀態
     document.querySelectorAll('.album-item').forEach(item => item.classList.remove('active'));
     albumItem.classList.add('active');
 
-    // 更新標題
     document.getElementById('currentAlbumTitle').textContent = albumName;
 
     currentAlbumId = albumId;
     loadPhotos(albumId);
 
-    // 手機版關閉側邊欄
     document.querySelector('.sidebar').classList.remove('active');
 }
 
@@ -573,7 +519,6 @@ async function handleAlbumSubmit(e) {
         showToast(albumId ? '相簿已更新' : '相簿已新增', 'success');
         closeAllModals();
 
-        // 重新載入頁面以更新相簿列表
         window.location.reload();
     } catch (error) {
         console.error('操作失敗:', error);
@@ -607,7 +552,6 @@ async function deleteAlbum(albumId) {
     }
 }
 
-// ==================== 確認刪除 ====================
 function confirmDelete(type, id) {
     deleteTarget = { type, id };
 
@@ -632,7 +576,6 @@ function handleConfirmDelete() {
     deleteTarget = null;
 }
 
-// ==================== Modal 操作 ====================
 function openModal(modalId) {
     document.getElementById(modalId).classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -650,7 +593,6 @@ function closeAllModals() {
     document.body.style.overflow = '';
 }
 
-// ==================== Toast 通知 ====================
 function showToast(message, type = 'success') {
     const container = document.getElementById('toastContainer');
     const toast = document.createElement('div');
@@ -666,12 +608,10 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
-// ==================== 側邊欄 ====================
 function toggleSidebar() {
     document.querySelector('.sidebar').classList.toggle('active');
 }
 
-// ==================== 工具函數 ====================
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
@@ -688,7 +628,6 @@ function formatDate(dateStr) {
     });
 }
 
-// ==================== 圖片編輯器 ====================
 let imageEditor = {
     currentPhotoId: null,
     currentFilter: 'none',
@@ -701,41 +640,34 @@ let imageEditor = {
 };
 
 function setupImageEditor() {
-    // 標籤切換
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             switchEditorTab(e.target.dataset.tab);
         });
     });
 
-    // 濾鏡選擇
     document.querySelectorAll('.filter-item').forEach(item => {
         item.addEventListener('click', (e) => {
             applyFilter(e.currentTarget.dataset.filter);
         });
     });
 
-    // 貼圖選擇
     document.querySelectorAll('.sticker-item').forEach(item => {
         item.addEventListener('click', (e) => {
             selectSticker(e.target.dataset.sticker);
         });
     });
 
-    // 貼圖大小調整
     const stickerSizeSlider = document.getElementById('stickerSize');
     const stickerSizeValue = document.getElementById('stickerSizeValue');
     stickerSizeSlider.addEventListener('input', (e) => {
         stickerSizeValue.textContent = e.target.value + 'px';
     });
 
-    // 調整控制項
     setupAdjustmentControls();
 
-    // 重置按鈕
     document.getElementById('resetAdjustments').addEventListener('click', resetAdjustments);
 
-    // 保存按鈕
     document.getElementById('saveEditedImage').addEventListener('click', saveEditedImage);
 }
 
@@ -746,24 +678,20 @@ function openImageEditor(photoId) {
     const img = photoCard.querySelector('img');
     imageEditor.currentPhotoId = photoId;
 
-    // 載入圖片到編輯器
     const editImage = document.getElementById('editImage');
     editImage.src = img.src;
 
-    // 重置編輯器狀態
     resetEditor();
 
     openModal('imageEditModal');
 }
 
 function switchEditorTab(tabName) {
-    // 切換標籤樣式
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
     });
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
 
-    // 切換面板
     document.querySelectorAll('.editor-panel').forEach(panel => {
         panel.classList.remove('active');
     });
@@ -774,7 +702,6 @@ function applyFilter(filterValue) {
     imageEditor.currentFilter = filterValue;
     updateImageDisplay();
 
-    // 更新選中狀態
     document.querySelectorAll('.filter-item').forEach(item => {
         item.classList.remove('selected');
     });
@@ -785,7 +712,6 @@ function selectSticker(stickerEmoji) {
     const stickerControls = document.querySelector('.sticker-controls');
     stickerControls.style.display = 'block';
 
-    // 顯示貼圖選擇器在圖片上
     const overlay = document.getElementById('stickerOverlay');
     const size = document.getElementById('stickerSize').value;
 
@@ -797,10 +723,8 @@ function selectSticker(stickerEmoji) {
     stickerElement.style.top = '50%';
     stickerElement.style.transform = 'translate(-50%, -50%)';
 
-    // 使貼圖可拖曳
     makeStickerDraggable(stickerElement);
 
-    // 添加刪除功能
     stickerElement.addEventListener('dblclick', () => {
         stickerElement.remove();
         updateStickers();
@@ -927,11 +851,9 @@ function resetEditor() {
     };
     imageEditor.stickers = [];
 
-    // 重置 UI
     document.getElementById('stickerOverlay').innerHTML = '';
     document.querySelector('.sticker-controls').style.display = 'none';
 
-    // 重置滑桿
     document.getElementById('brightnessSlider').value = 100;
     document.getElementById('contrastSlider').value = 100;
     document.getElementById('saturationSlider').value = 100;
@@ -939,7 +861,6 @@ function resetEditor() {
     document.getElementById('contrastValue').textContent = '100%';
     document.getElementById('saturationValue').textContent = '100%';
 
-    // 重置濾鏡選擇
     document.querySelectorAll('.filter-item').forEach(item => {
         item.classList.remove('selected');
     });
@@ -976,43 +897,36 @@ async function saveEditedImage() {
     saveBtn.disabled = true;
 
     try {
-        // 創建 canvas 來合成最終圖片
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         const editImage = document.getElementById('editImage');
 
-        // 設置 canvas 尺寸
         canvas.width = editImage.naturalWidth;
         canvas.height = editImage.naturalHeight;
 
-        // 繪製原始圖片
         ctx.filter = editImage.style.filter || 'none';
         ctx.drawImage(editImage, 0, 0, canvas.width, canvas.height);
 
-        // 添加貼圖
         const stickers = document.querySelectorAll('.placed-sticker');
         stickers.forEach(sticker => {
             const rect = editImage.getBoundingClientRect();
             const stickerRect = sticker.getBoundingClientRect();
 
-            // 計算貼圖在圖片上的相對位置
             const x = ((stickerRect.left + stickerRect.width / 2 - rect.left) / rect.width) * canvas.width;
             const y = ((stickerRect.top + stickerRect.height / 2 - rect.top) / rect.height) * canvas.height;
             const fontSize = parseInt(sticker.style.fontSize) * (canvas.width / rect.width);
 
-            ctx.filter = 'none'; // 貼圖不套用濾鏡
+            ctx.filter = 'none';
             ctx.font = `${fontSize}px Arial`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(sticker.textContent, x, y);
         });
 
-        // 將 canvas 轉換為 Blob
         const blob = await new Promise(resolve => {
             canvas.toBlob(resolve, 'image/jpeg', 0.9);
         });
 
-        // 準備表單數據
         const formData = new FormData();
         formData.append('action', 'update_edited_image');
         formData.append('photo_id', photoId);
@@ -1033,7 +947,6 @@ async function saveEditedImage() {
         showToast('修圖已保存', 'success');
         closeModal('imageEditModal');
 
-        // 重新載入照片以顯示更新
         loadPhotos(currentAlbumId);
 
     } catch (error) {
@@ -1045,7 +958,6 @@ async function saveEditedImage() {
     }
 }
 
-// ==================== 朋友記憶遊戲 ====================
 
 class FriendMemoryGame {
     constructor() {
@@ -1053,9 +965,9 @@ class FriendMemoryGame {
         this.gameSequence = [];
         this.playerSequence = [];
         this.currentBeat = 0;
-        this.gamePhase = 'waiting'; // waiting, showing, playing, finished
-        this.difficulty = 8; // 固定8張照片
-        this.fixedBPM = 180; // 固定180 BPM
+        this.gamePhase = 'waiting';
+        this.difficulty = 8; 
+        this.fixedBPM = 180;
         this.gameTimer = null;
         this.beatTimer = null;
         this.startTime = null;
@@ -1064,8 +976,7 @@ class FriendMemoryGame {
         this.initEventListeners();
     }
     
-    initEventListeners() {        
-        // 遊戲內按鈕
+    initEventListeners() {
         const startGameButton = document.getElementById('startGameButton');
         if (startGameButton) {
             startGameButton.addEventListener('click', () => {
@@ -1087,15 +998,12 @@ class FriendMemoryGame {
             });
         }
         
-        // 固定難度為8，無需選擇功能
     }
     
     async openGameModal() {
         try {
-            // 載入遊戲數據
             const response = await fetch('api.php?action=get_game_friends_data');
             
-            // 檢查回應狀態
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
@@ -1138,17 +1046,13 @@ class FriendMemoryGame {
     
     async startGame() {
         try {
-            // 切換到遊戲畫面
             this.showGameScreen('gamePlayScreen');
             
-            // 初始化遊戲
             this.generateGameSequence();
             this.startTime = Date.now();
             
-            // 載入背景音樂
             await this.loadGameMusic();
             
-            // 播放背景音樂
             if (this.audio && this.customMusicLoaded) {
                 try {
                     await this.audio.play();
@@ -1157,15 +1061,12 @@ class FriendMemoryGame {
                 }
             }
             
-            // 初始化遊戲顯示區域
             this.initGameDisplay();
             
-            // 開始顯示階段
             this.gamePhase = 'showing';
             this.currentBeat = 1;
             this.updateGameInfo();
             
-            // 開始節拍顯示
             this.startBeatShow();
             
         } catch (error) {
@@ -1175,7 +1076,6 @@ class FriendMemoryGame {
     }
     
     initGameDisplay() {
-        // 初始化遊戲顯示區域
         const photoDisplay = document.getElementById('photoDisplay');
         if (photoDisplay) {
             photoDisplay.innerHTML = `
@@ -1185,7 +1085,6 @@ class FriendMemoryGame {
             `;
         }
         
-        // 隱藏選擇區域
         const nameSelection = document.getElementById('nameSelection');
         if (nameSelection) {
             nameSelection.style.display = 'none';
@@ -1193,9 +1092,8 @@ class FriendMemoryGame {
     }
     
     generateGameSequence() {
-        // 從好友數據中隨機選擇8張照片
         const shuffled = [...this.gameData].sort(() => Math.random() - 0.5);
-        this.gameSequence = shuffled.slice(0, 8); // 固定使用8張
+        this.gameSequence = shuffled.slice(0, 8);
         this.playerSequence = [];
     }
     
@@ -1205,8 +1103,7 @@ class FriendMemoryGame {
         }
         
         try {
-            // 使用固定的音樂檔案路徑
-            const audio = new Audio('game_music.m4a'); // 固定音樂檔案，放在同一目錄
+            const audio = new Audio('game_music.m4a');
             audio.loop = true;
             audio.volume = 0.3;
             
@@ -1214,7 +1111,6 @@ class FriendMemoryGame {
             this.customMusicLoaded = true;
         } catch (error) {
             console.warn('無法載入背景音樂，使用節拍聲:', error);
-            // 使用 Web Audio API 創建節拍聲作為備用
             try {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 this.audioContext = audioContext;
@@ -1231,12 +1127,10 @@ class FriendMemoryGame {
             audio.loop = true;
             audio.volume = 0.5;
             
-            // 等待音樂載入
             await new Promise((resolve, reject) => {
                 audio.addEventListener('loadedmetadata', () => {
                     this.audio = audio;
                     this.customMusicLoaded = true;
-                    // 自動計算節拍（BPM）
                     this.customBPM = parseInt(document.getElementById('bpmInput')?.value) || 120;
                     resolve();
                 });
@@ -1248,8 +1142,7 @@ class FriendMemoryGame {
     }
     
     getBeatInterval() {
-        // 固定使用180 BPM
-        return (60 / this.fixedBPM) * 1000; // 約333毫秒一拍
+        return (60 / this.fixedBPM) * 1000;
     }
     
     playBeatSound() {
@@ -1270,11 +1163,10 @@ class FriendMemoryGame {
     }
     
     startBeatShow() {
-        // 重置打亂的選項，確保每次新遊戲都會重新打亂
         this.shuffledOptions = null;
         
         let beatCount = 0;
-        const totalBeats = 8 * 3; // 三階段，固定24拍（8張照片）
+        const totalBeats = 8 * 3;
         
         const beatInterval = setInterval(() => {
             this.playBeatSound();
@@ -1283,12 +1175,10 @@ class FriendMemoryGame {
             beatCount++;
             this.currentBeat = beatCount;
             
-            // 第一階段：準備階段 (1-8拍)
             if (beatCount <= 8) {
                 this.gamePhase = 'preparing';
                 this.showPreparationPhase(beatCount);
             }
-            // 第二階段：展示階段 (9-16拍)
             else if (beatCount <= 16) {
                 if (beatCount === 9) {
                     this.gamePhase = 'showing';
@@ -1296,7 +1186,6 @@ class FriendMemoryGame {
                 }
                 this.showDisplayPhase(beatCount - 8);
             }
-            // 第三階段：回答階段 (17-24拍)
             else {
                 if (beatCount === 17) {
                     this.gamePhase = 'playing';
@@ -1321,7 +1210,6 @@ class FriendMemoryGame {
     showPreparationPhase(beat) {
         const gameDisplay = document.querySelector('.game-display');
         if (gameDisplay && beat === 1) {
-            // 清空所有內容，避免顯示上次的遊戲內容
             gameDisplay.innerHTML = `
                 <div class="game-status">
                     <h3>🛠️ 準備階段</h3>
@@ -1333,11 +1221,9 @@ class FriendMemoryGame {
             `;
         }
         
-        // 預載入照片資料
         if (beat <= 8) {
             const friend = this.gameSequence[beat - 1];
             if (friend && friend.photo) {
-                // 預載入照片
                 const img = new Image();
                 img.src = friend.photo.startsWith('http') ? friend.photo : 
                           friend.photo.startsWith('uploads/') ? friend.photo : 
@@ -1347,7 +1233,6 @@ class FriendMemoryGame {
     }
     
     setupNameSelection() {
-        // 在準備階段就建置好選擇區域和選項
         const nameSelection = document.getElementById('nameSelection');
         nameSelection.style.display = 'block';
         
@@ -1358,21 +1243,18 @@ class FriendMemoryGame {
         const nameGrid = document.getElementById('nameGrid');
         nameGrid.innerHTML = '';
         
-        // 如果選項順序還沒確定，就生成並打亂
         if (!this.shuffledOptions) {
             const correctNames = this.gameSequence.map(friend => friend.username);
             const allFriends = [...this.gameData];
             const distractorNames = allFriends
                 .filter(friend => !correctNames.includes(friend.username))
                 .map(friend => friend.username)
-                .slice(0, 4); // 只取前4個作為干擾項
+                .slice(0, 4);
             
-            // 合併所有選項並打亂一次
             const allOptions = [...correctNames, ...distractorNames];
             this.shuffledOptions = allOptions.sort(() => Math.random() - 0.5);
         }
         
-        // 使用已經打亂好的固定順序
         this.shuffledOptions.forEach(name => {
             const button = document.createElement('button');
             button.className = 'name-option';
@@ -1393,7 +1275,6 @@ class FriendMemoryGame {
             `;
         }
         
-        // 確保選項在這個階段就準備好
         this.generateFixedNameOptions();
     }
     
@@ -1401,7 +1282,6 @@ class FriendMemoryGame {
         const showingGrid = document.getElementById('showingGrid');
         if (!showingGrid) return;
         
-        // 逐一顯示照片
         if (beat <= 8) {
             const friend = this.gameSequence[beat - 1];
             const photoSrc = friend.photo && friend.photo !== 'null' && friend.photo !== '' ? 
@@ -1420,15 +1300,12 @@ class FriendMemoryGame {
     }
     
     startPlayingPhase() {
-        // 選擇區域已經在準備階段建置好，這裡只需初始化狀態
-        this.playerSequence = []; // 重設玩家答案
+        this.playerSequence = [];
         this.playerAnsweredThisBeat = false;
     }
     
     handlePlayerPhase(beat) {
-        // 檢查上一拍是否有回答（除了第一拍）
         if (beat > 1 && !this.playerAnsweredThisBeat) {
-            // 沒有在節拍點回答，記錄為錯誤
             this.playerSequence.push({ 
                 name: '未回答', 
                 correct: false,
@@ -1436,15 +1313,13 @@ class FriendMemoryGame {
             });
         }
         
-        this.playerAnsweredThisBeat = false; // 重設當前拍的回答狀態
+        this.playerAnsweredThisBeat = false;
         
-        // 選項已經在準備階段生成，不需要再更新
     }
     
     showBeatIndicator() {
         let indicator = document.getElementById('beatIndicator');
         
-        // 如果找不到指示器，動態創建一個
         if (!indicator) {
             const photoDisplay = document.getElementById('photoDisplay');
             if (photoDisplay) {
@@ -1484,7 +1359,6 @@ class FriendMemoryGame {
         const nameElement = document.getElementById('currentFriendName');
         
         if (friend.photo && friend.photo !== 'null' && friend.photo !== '') {
-            // 如果是相對路徑，使用原本的邏輯；如果是絕對路徑，直接使用
             if (friend.photo.startsWith('uploads/') || friend.photo.startsWith('/') || friend.photo.startsWith('http')) {
                 photoElement.src = friend.photo;
             } else {
@@ -1493,30 +1367,21 @@ class FriendMemoryGame {
             photoElement.style.display = 'block';
             photoElement.alt = friend.username;
         } else {
-            // 如果沒有照片，顯示頭像字母
             photoElement.style.display = 'none';
         }
-        
-        // 在新模式下，名稱不顯示，只顯示照片
+
         if (!keepVisible) {
             nameElement.textContent = friend.username;
             nameElement.style.display = 'block';
             
-            // 短暫顯示後隱藏
             setTimeout(() => {
                 photoElement.style.display = 'none';
                 nameElement.style.display = 'none';
             }, 800);
         }
-        // keepVisible = true 時，照片保持顯示，名稱不顯示
     }
     
-    // startPlayerTurn 和 showPhotoGrid 已整合到新的三階段系統中
-    
-    // startPlayerBeat 已整合到新的三階段系統中
-    
     selectName(name) {
-        // 檢查是否在遊戲中且還沒有回答這一拍
         if (this.gamePhase !== 'playing' || this.playerAnsweredThisBeat) {
             return;
         }
@@ -1524,10 +1389,8 @@ class FriendMemoryGame {
         const expectedName = this.gameSequence[this.playerSequence.length].username;
         const isCorrect = name === expectedName;
         
-        // 記錄這一拍已經回答
         this.playerAnsweredThisBeat = true;
         
-        // 視覺反饋
         const buttons = document.querySelectorAll('.name-option');
         buttons.forEach(btn => {
             if (btn.textContent === name) {
@@ -1536,10 +1399,8 @@ class FriendMemoryGame {
             btn.disabled = true;
         });
         
-        // 記錄答案
         this.playerSequence.push({ name, correct: isCorrect });
         
-        // 簡短的視覺反饋後重新啟用按鈕
         setTimeout(() => {
             buttons.forEach(btn => {
                 btn.disabled = false;
@@ -1559,7 +1420,6 @@ class FriendMemoryGame {
         const accuracy = Math.round((correctCount / 8) * 100);
         const gameTime = Math.round((Date.now() - this.startTime) / 1000);
         
-        // 顯示結果
         this.showGameResults(accuracy, gameTime, correctCount);
     }
     
@@ -1569,7 +1429,6 @@ class FriendMemoryGame {
         const resultIcon = document.getElementById('resultIcon');
         const resultTitle = document.getElementById('resultTitle');
         
-        // 計算錯過的節拍數
         const missedBeats = this.playerSequence.filter(p => p.missed).length;
         const wrongAnswers = this.playerSequence.filter(p => !p.correct && !p.missed).length;
         
@@ -1587,7 +1446,6 @@ class FriendMemoryGame {
         document.getElementById('accuracyRate').textContent = `${accuracy}%`;
         document.getElementById('gameTime').textContent = `${gameTime}秒`;
         
-        // 顯示詳細統計
         const gameDifficultyElement = document.getElementById('gameDifficulty');
         gameDifficultyElement.innerHTML = `
             <small style="color: var(--text-secondary); font-size: 0.8em;">
@@ -1604,7 +1462,7 @@ class FriendMemoryGame {
     }
     
     updateGameInfo() {
-        const totalBeats = 24; // 固定24拍
+        const totalBeats = 24;
         document.getElementById('currentBeat').textContent = this.currentBeat;
         
         const phaseText = {
@@ -1655,8 +1513,6 @@ class FriendMemoryGame {
     }
 }
 
-// 初始化遊戲
 document.addEventListener('DOMContentLoaded', () => {
-    // 初始化遊戲實例
     window.friendMemoryGame = new FriendMemoryGame();
 });
