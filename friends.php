@@ -16,7 +16,6 @@ $username = getCurrentUsername();
 </head>
 <body>
     <div class="friends-page">
-        <!-- 頂部導航 -->
         <header class="profile-header-nav">
             <a href="home.php" class="back-btn">← 返回</a>
             <div class="logo">
@@ -27,7 +26,6 @@ $username = getCurrentUsername();
         </header>
         
         <div class="friends-container">
-            <!-- Photo Roulette -->
             <div class="roulette-section">
                 <h2>🎲 Photo Roulette</h2>
                 <div id="rouletteGame" class="roulette-game">
@@ -40,7 +38,6 @@ $username = getCurrentUsername();
                             <img id="rouletteImage" src="" alt="Mystery Photo">
                         </div>
                         <div class="roulette-options" id="rouletteOptions">
-                            <!-- Options will be injected here -->
                         </div>
                     </div>
                     <div class="roulette-result" style="display: none;">
@@ -51,7 +48,6 @@ $username = getCurrentUsername();
                 </div>
             </div>
 
-            <!-- 搜尋區 -->
             <div class="search-section">
                 <h2>🔍 尋找好友</h2>
                 <div class="search-box">
@@ -61,7 +57,6 @@ $username = getCurrentUsername();
                 <div class="search-results" id="searchResults"></div>
             </div>
             
-            <!-- 好友請求區 -->
             <div class="requests-section">
                 <h2>📬 好友請求 <span class="badge" id="requestBadge"></span></h2>
                 <div class="requests-list" id="requestsList">
@@ -69,7 +64,6 @@ $username = getCurrentUsername();
                 </div>
             </div>
             
-            <!-- 好友列表區 -->
             <div class="friends-section">
                 <h2>👥 我的好友 <span class="badge" id="friendBadge"></span></h2>
                 <div class="friends-list" id="friendsList">
@@ -79,7 +73,6 @@ $username = getCurrentUsername();
         </div>
     </div>
     
-    <!-- Toast -->
     <div class="toast-container" id="toastContainer"></div>
     
     <script>
@@ -89,7 +82,6 @@ $username = getCurrentUsername();
             loadFriendRequests();
             loadFriends();
             
-            // Enter 鍵搜尋
             document.getElementById('searchInput').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') searchUsers();
             });
@@ -229,7 +221,7 @@ $username = getCurrentUsername();
                 
                 if (data.success) {
                     showToast(data.message, 'success');
-                    searchUsers(); // 重新載入搜尋結果
+                    searchUsers();
                 } else {
                     showToast(data.error, 'error');
                 }
@@ -295,7 +287,6 @@ $username = getCurrentUsername();
             }
         }
 
-        // Photo Roulette Logic
         async function startRoulette() {
             const gameContainer = document.getElementById('rouletteGame');
             const startDiv = gameContainer.querySelector('.roulette-start');

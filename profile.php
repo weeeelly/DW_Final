@@ -6,10 +6,8 @@ $conn = getDBConnection();
 $userId = getCurrentUserId();
 $currentUsername = getCurrentUsername();
 
-// 取得要查看的使用者 ID
 $profileUserId = intval($_GET['id'] ?? $userId);
 
-// 取得使用者資料
 $stmt = $conn->prepare("SELECT id, username, bio, avatar, created_at, ai_estimated_age, ai_tags FROM users WHERE id = ?");
 $stmt->bind_param("i", $profileUserId);
 $stmt->execute();
@@ -23,7 +21,6 @@ if ($result->num_rows === 0) {
 $profileUser = $result->fetch_assoc();
 $stmt->close();
 
-// 檢查好友關係
 $relation = 'none';
 $isSelf = ($userId === $profileUserId);
 
@@ -37,7 +34,6 @@ if (!$isSelf) {
         $friendship = $friendResult->fetch_assoc();
         $relation = $friendship['status'] === 'accepted' ? 'friend' : 'pending_sent';
     } else {
-        // 檢查反向
         $stmt2 = $conn->prepare("SELECT status FROM friendships WHERE user_id = ? AND friend_id = ?");
         $stmt2->bind_param("ii", $profileUserId, $userId);
         $stmt2->execute();
@@ -51,7 +47,6 @@ if (!$isSelf) {
     $stmt->close();
 }
 
-// 取得統計資料
 $stmt = $conn->prepare("SELECT COUNT(*) as count FROM photos WHERE user_id = ?");
 $stmt->bind_param("i", $profileUserId);
 $stmt->execute();
@@ -77,7 +72,6 @@ $conn->close();
 </head>
 <body>
     <div class="profile-page">
-        <!-- 頂部導航 -->
         <header class="profile-header-nav">
             <a href="home.php" class="back-btn">← 返回</a>
             <div class="logo">
@@ -87,7 +81,6 @@ $conn->close();
             <a href="friends.php" class="nav-link">好友</a>
         </header>
         
-        <!-- 個人資料區 -->
         <div class="profile-hero">
             <div class="profile-avatar">
                 <?php if ($profileUser['avatar']): ?>
@@ -164,7 +157,6 @@ $conn->close();
             </div>
         </div>
         
-        <!-- 照片區 -->
         <div class="profile-content">
             <h2>照片牆</h2>
             <div class="photo-grid" id="photoGrid">
@@ -177,7 +169,6 @@ $conn->close();
         </div>
     </div>
     
-    <!-- 照片檢視 Modal -->
     <div class="modal" id="photoModal">
         <div class="modal-overlay"></div>
         <div class="modal-content modal-lg">
@@ -218,7 +209,6 @@ $conn->close();
         </div>
     </div>
     
-    <!-- Toast -->
     <div class="toast-container" id="toastContainer"></div>
     
     <script>
@@ -238,11 +228,9 @@ $conn->close();
         });
         
         function initEventListeners() {
-            // Modal 關閉
             document.querySelector('.modal-close').addEventListener('click', closeModal);
             document.querySelector('.modal-overlay').addEventListener('click', closeModal);
             
-            // 留言表單
             document.getElementById('commentForm').addEventListener('submit', handleCommentSubmit);
         }
         
@@ -347,7 +335,6 @@ $conn->close();
                         likeBtn.querySelector('.like-icon').textContent = '♡';
                     }
                     
-                    // 更新本地資料
                     const photo = photosData.find(p => p.id == currentPhotoId);
                     if (photo) {
                         photo.like_count = data.like_count;
@@ -406,7 +393,6 @@ $conn->close();
                     input.value = '';
                     loadComments(currentPhotoId);
                     
-                    // 更新留言數
                     const photo = photosData.find(p => p.id == currentPhotoId);
                     if (photo) photo.comment_count++;
                 } else {
@@ -437,7 +423,6 @@ $conn->close();
             }
         }
         
-        // 好友功能
         async function addFriend(friendId) {
             try {
                 const formData = new FormData();
@@ -514,7 +499,6 @@ $conn->close();
             }
         }
         
-        // 工具函數
         function escapeHtml(text) {
             if (!text) return '';
             const div = document.createElement('div');

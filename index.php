@@ -1,7 +1,6 @@
 <?php
 require_once 'config.php';
 
-// 如果已經登入，直接跳轉到主頁
 if (isLoggedIn()) {
     header('Location: home.php');
     exit();
@@ -9,7 +8,6 @@ if (isLoggedIn()) {
 
 $error = '';
 
-// 處理登入表單提交
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -25,7 +23,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($row = $result->fetch_assoc()) {
             if (password_verify($password, $row['password'])) {
-                // 登入成功
                 $_SESSION['user_id'] = $row['id'];
                 $_SESSION['username'] = $row['username'];
                 header('Location: home.php');

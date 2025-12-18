@@ -6,7 +6,6 @@ $conn = getDBConnection();
 $userId = getCurrentUserId();
 $username = getCurrentUsername();
 
-// 取得使用者的所有相簿
 $albums = [];
 $stmt = $conn->prepare("SELECT * FROM albums WHERE user_id = ? ORDER BY is_default DESC, created_at ASC");
 $stmt->bind_param("i", $userId);
@@ -17,7 +16,6 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-// 取得預設相簿 ID
 $defaultAlbumId = null;
 foreach ($albums as $album) {
     if ($album['is_default']) {
@@ -39,7 +37,6 @@ $conn->close();
 </head>
 <body>
     <div class="app-container">
-        <!-- 側邊欄 -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
@@ -91,7 +88,6 @@ $conn->close();
             </div>
         </aside>
         
-        <!-- 主內容區 -->
         <main class="main-content">
             <header class="main-header">
                 <div class="header-left">
@@ -109,7 +105,6 @@ $conn->close();
             </header>
             
             <div class="photo-grid" id="photoGrid">
-                <!-- 照片將由 JavaScript 動態載入 -->
                 <div class="loading">載入中...</div>
             </div>
             
@@ -121,7 +116,6 @@ $conn->close();
         </main>
     </div>
     
-    <!-- 新增/編輯照片 Modal -->
     <div class="modal" id="photoModal">
         <div class="modal-overlay"></div>
         <div class="modal-content">
@@ -178,7 +172,6 @@ $conn->close();
         </div>
     </div>
     
-    <!-- 新增/編輯相簿 Modal -->
     <div class="modal" id="albumModal">
         <div class="modal-overlay"></div>
         <div class="modal-content modal-sm">
@@ -203,7 +196,6 @@ $conn->close();
         </div>
     </div>
     
-    <!-- 檢視照片 Modal -->
     <div class="modal" id="viewPhotoModal">
         <div class="modal-overlay"></div>
         <div class="modal-content modal-lg">
@@ -229,7 +221,6 @@ $conn->close();
         </div>
     </div>
     
-    <!-- 確認刪除 Modal -->
     <div class="modal" id="confirmModal">
         <div class="modal-overlay"></div>
         <div class="modal-content modal-sm">
@@ -247,7 +238,6 @@ $conn->close();
         </div>
     </div>
     
-    <!-- 圖片編輯 Modal -->
     <div class="modal" id="imageEditModal">
         <div class="modal-overlay"></div>
         <div class="modal-content modal-xl">
@@ -264,7 +254,6 @@ $conn->close();
                     </div>
                 </div>
                 
-                <!-- 濾鏡面板 -->
                 <div class="editor-panel active" id="filtersPanel">
                     <h4>選擇濾鏡效果</h4>
                     <div class="filter-grid">
@@ -295,7 +284,6 @@ $conn->close();
                     </div>
                 </div>
                 
-                <!-- 貼圖面板 -->
                 <div class="editor-panel" id="stickersPanel">
                     <h4>選擇貼圖</h4>
                     <div class="sticker-grid">
@@ -329,7 +317,6 @@ $conn->close();
                     </div>
                 </div>
                 
-                <!-- 調整面板 -->
                 <div class="editor-panel" id="adjustPanel">
                     <h4>調整圖片</h4>
                     <div class="adjust-controls">
@@ -363,7 +350,6 @@ $conn->close();
         </div>
     </div>
 
-    <!-- 朋友記憶遊戲 Modal -->
     <div class="modal" id="gameModal">
         <div class="modal-overlay"></div>
         <div class="modal-content modal-xl">
@@ -372,7 +358,6 @@ $conn->close();
                 <button class="modal-close">&times;</button>
             </div>
             <div class="game-container">
-                <!-- 遊戲開始畫面 -->
                 <div class="game-screen active" id="gameStartScreen">
                     <div class="game-intro">
                         <h2>準備挑戰你的記憶力！</h2>
@@ -406,7 +391,6 @@ $conn->close();
                     </div>
                 </div>
                 
-                <!-- 遊戲進行畫面 -->
                 <div class="game-screen" id="gamePlayScreen">
                     <div class="game-info">
                         <div class="game-progress">
@@ -419,14 +403,12 @@ $conn->close();
                     </div>
                     
                     <div class="game-display">
-                        <!-- 顯示朋友照片的區域 -->
                         <div class="photo-display" id="photoDisplay">
                             <div class="beat-indicator" id="beatIndicator">♪</div>
                             <img id="currentPhoto" src="" alt="" style="display: none;">
                             <div class="friend-name" id="currentFriendName" style="display: none;"></div>
                         </div>
                         
-                        <!-- 選擇朋友名稱的區域 -->
                         <div class="name-selection" id="nameSelection" style="display: none;">
                             <h3>點擊朋友的名稱 (按照剛才照片出現的順序)</h3>
                             <div class="name-grid" id="nameGrid"></div>
@@ -439,7 +421,6 @@ $conn->close();
                     </div>
                 </div>
                 
-                <!-- 遊戲結果畫面 -->
                 <div class="game-screen" id="gameResultScreen">
                     <div class="game-result">
                         <div class="result-icon" id="resultIcon">🎉</div>
@@ -468,11 +449,9 @@ $conn->close();
         </div>
     </div>
 
-    <!-- Toast 通知 -->
     <div class="toast-container" id="toastContainer"></div>
     
     <script>
-        // 傳遞 PHP 資料給 JavaScript
         const APP_DATA = {
             userId: <?php echo $userId; ?>,
             username: '<?php echo h($username); ?>',

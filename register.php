@@ -1,7 +1,6 @@
 <?php
 require_once 'config.php';
 
-// 如果已經登入，直接跳轉到主頁
 if (isLoggedIn()) {
     header('Location: home.php');
     exit();
@@ -10,7 +9,6 @@ if (isLoggedIn()) {
 $error = '';
 $success = '';
 
-// 處理註冊表單提交
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -26,8 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = '兩次輸入的密碼不一致';
     } else {
         $conn = getDBConnection();
-        
-        // 檢查使用者名稱是否已存在
+
         $stmt = $conn->prepare("SELECT id FROM users WHERE username = ?");
         $stmt->bind_param("s", $username);
         $stmt->execute();
@@ -36,7 +33,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($result->num_rows > 0) {
             $error = '此使用者名稱已被使用';
         } else {
-            // 建立新使用者
             $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
             $stmt = $conn->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
             $stmt->bind_param("ss", $username, $hashedPassword);
@@ -44,7 +40,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($stmt->execute()) {
                 $userId = $stmt->insert_id;
                 
-                // 為新使用者建立預設相簿 "Recents"
                 $defaultAlbum = "Recents";
                 $stmt2 = $conn->prepare("INSERT INTO albums (user_id, name, is_default) VALUES (?, ?, TRUE)");
                 $stmt2->bind_param("is", $userId, $defaultAlbum);

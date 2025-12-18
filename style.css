@@ -1,4 +1,3 @@
-/* ==================== 基礎設定 ==================== */
 :root {
     --primary-color: #ff6b6b;
     --primary-dark: #ee5a5a;
@@ -44,7 +43,6 @@ a:hover {
     color: var(--primary-dark);
 }
 
-/* ==================== 認證頁面 ==================== */
 .auth-page {
     display: flex;
     align-items: center;
@@ -120,7 +118,6 @@ a:hover {
     text-align: center;
 }
 
-/* ==================== 表單元件 ==================== */
 .form-group {
     margin-bottom: 20px;
 }
@@ -165,7 +162,6 @@ a:hover {
     color: var(--text-muted);
 }
 
-/* ==================== 按鈕 ==================== */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -238,7 +234,6 @@ a:hover {
     transition: var(--transition);
 }
 
-/* ==================== 提示訊息 ==================== */
 .alert {
     padding: 12px 16px;
     border-radius: var(--radius-sm);
@@ -258,13 +253,11 @@ a:hover {
     color: var(--success-color);
 }
 
-/* ==================== 主頁面布局 ==================== */
 .app-container {
     display: flex;
     min-height: 100vh;
 }
 
-/* ==================== 側邊欄 ==================== */
 .sidebar {
     width: 280px;
     background: var(--surface-color);
@@ -410,7 +403,6 @@ a:hover {
     color: var(--text-secondary);
 }
 
-/* ==================== 主內容區 ==================== */
 .main-content {
     flex: 1;
     margin-left: 280px;
@@ -451,7 +443,6 @@ a:hover {
     cursor: pointer;
 }
 
-/* ==================== 照片網格 ==================== */
 .photo-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -572,7 +563,6 @@ a:hover {
     font-size: 0.9rem;
 }
 
-/* ==================== 空狀態 ==================== */
 .empty-state {
     display: flex;
     flex-direction: column;
@@ -608,7 +598,6 @@ a:hover {
     grid-column: 1 / -1;
 }
 
-/* ==================== AI Result Section ==================== */
 .ai-result-section {
     background: var(--surface-light);
     padding: 15px;
@@ -635,7 +624,6 @@ a:hover {
     color: var(--text-secondary);
 }
 
-/* ==================== Modal ==================== */
 .modal {
     display: none;
     position: fixed;
@@ -728,7 +716,6 @@ a:hover {
     margin-top: 20px;
 }
 
-/* ==================== 圖片預覽 ==================== */
 .image-preview {
     width: 100%;
     height: 200px;
@@ -752,7 +739,6 @@ a:hover {
     font-size: 0.9rem;
 }
 
-/* ==================== 檔案上傳 ==================== */
 .file-upload-wrapper {
     position: relative;
     width: 100%;
@@ -806,7 +792,6 @@ a:hover {
     word-break: break-all;
 }
 
-/* ==================== 照片檢視器 ==================== */
 .photo-viewer {
     display: flex;
     flex-direction: column;
@@ -842,7 +827,6 @@ a:hover {
     padding: 0 20px 20px;
 }
 
-/* ==================== Toast 通知 ==================== */
 .toast-container {
     position: fixed;
     bottom: 20px;
@@ -898,7 +882,6 @@ a:hover {
     }
 }
 
-/* ==================== 響應式設計 ==================== */
 @media (max-width: 992px) {
     .sidebar {
         transform: translateX(-100%);
@@ -963,7 +946,6 @@ a:hover {
     }
 }
 
-/* ==================== 滾動條美化 ==================== */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -982,7 +964,6 @@ a:hover {
     background: var(--text-muted);
 }
 
-/* ==================== 個人檔案頁面 ==================== */
 .profile-page {
     min-height: 100vh;
     background: var(--background-color);
@@ -1098,7 +1079,6 @@ a:hover {
     font-size: 1.3rem;
 }
 
-/* ==================== 好友頁面 ==================== */
 .friends-page {
     min-height: 100vh;
     background: var(--background-color);
@@ -1246,7 +1226,6 @@ a:hover {
     padding: 20px;
 }
 
-/* ==================== 照片詳細檢視 ==================== */
 .photo-detail-view {
     display: flex;
     max-height: 80vh;
@@ -1348,7 +1327,6 @@ a:hover {
     color: var(--error-color);
 }
 
-/* ==================== 留言區 ==================== */
 .photo-detail-comments {
     flex: 1;
     display: flex;
@@ -1464,7 +1442,6 @@ a:hover {
     border-color: var(--primary-color);
 }
 
-/* ==================== 照片卡片統計 ==================== */
 .photo-card-stats {
     display: flex;
     gap: 16px;
@@ -1472,7 +1449,6 @@ a:hover {
     font-size: 0.9rem;
 }
 
-/* ==================== 響應式 - 個人檔案 ==================== */
 @media (max-width: 768px) {
     .profile-hero {
         flex-direction: column;
@@ -1524,7 +1500,6 @@ a:hover {
     }
 }
 
-/* ==================== 圖片編輯器 ==================== */
 .modal-xl {
     max-width: 1000px;
 }
@@ -1585,7 +1560,6 @@ a:hover {
     font-size: 1.1rem;
 }
 
-/* 濾鏡面板 */
 .filter-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
@@ -1640,7 +1614,6 @@ a:hover {
     color: var(--text-secondary);
 }
 
-/* 貼圖面板 */
 .sticker-category {
     margin-bottom: 20px;
 }
@@ -1721,7 +1694,6 @@ a:hover {
     color: var(--primary-color);
 }
 
-/* 調整面板 */
 .adjust-controls {
     display: flex;
     flex-direction: column;
@@ -1771,7 +1743,6 @@ a:hover {
     margin-top: 15px;
 }
 
-/* 圖片容器 */
 .image-container {
     position: relative;
     display: flex;
@@ -1812,7 +1783,6 @@ a:hover {
     filter: drop-shadow(0 0 8px rgba(255, 107, 107, 0.8));
 }
 
-/* 響應式調整 */
 @media (max-width: 768px) {
     .modal-xl {
         max-width: 95%;
@@ -1848,9 +1818,6 @@ a:hover {
     }
 }
 
-/* ==================== 朋友記憶遊戲樣式 ==================== */
-
-/* 遊戲容器 */
 .game-container {
     width: 100%;
     min-height: 800px;
@@ -1860,7 +1827,6 @@ a:hover {
     overflow: hidden;
 }
 
-/* 遊戲畫面切換 */
 .game-screen {
     display: none;
     width: 100%;
@@ -1881,7 +1847,6 @@ a:hover {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* 遊戲開始畫面 */
 .game-intro {
     text-align: center;
     max-width: 500px;
@@ -1948,7 +1913,6 @@ a:hover {
     outline: none;
 }
 
-/* 音樂選擇器樣式 */
 .music-selector {
     margin: 2rem 0;
     padding: 1.5rem;
@@ -2001,7 +1965,6 @@ a:hover {
     outline: none;
 }
 
-/* 遊戲進行畫面 */
 .game-info {
     width: 100%;
     margin-bottom: 2rem;
@@ -2041,7 +2004,6 @@ a:hover {
     color: var(--secondary-color);
 }
 
-/* 遊戲顯示區 */
 .game-display {
     flex: 1;
     display: flex;
@@ -2124,7 +2086,6 @@ a:hover {
     }
 }
 
-/* 遊戲狀態顯示 */
 .game-status {
     text-align: center;
     padding: 2rem;
@@ -2170,7 +2131,6 @@ a:hover {
     50% { opacity: 1; transform: scale(1.2); }
 }
 
-/* 照片參考網格 */
 .photo-grid-container {
     text-align: center;
     width: 100%;
@@ -2265,7 +2225,6 @@ a:hover {
     flex-shrink: 0;
 }
 
-/* 照片出現動畫 */
 .reference-photo-item.appear {
     animation: photoAppearIn 0.6s ease-out;
 }
@@ -2284,7 +2243,6 @@ a:hover {
     }
 }
 
-/* 名稱選擇區 */
 .name-selection {
     text-align: center;
     width: 100%;
@@ -2357,7 +2315,6 @@ a:hover {
     100% { transform: translateX(0); }
 }
 
-/* 遊戲控制區 */
 .game-controls {
     margin-top: 2rem;
     text-align: center;
@@ -2367,7 +2324,6 @@ a:hover {
     margin: 0 0.5rem;
 }
 
-/* 遊戲結果畫面 */
 .game-result {
     text-align: center;
     max-width: 500px;
@@ -2439,7 +2395,6 @@ a:hover {
     margin: 0 0.5rem;
 }
 
-/* 響應式設計 */
 @media (max-width: 768px) {
     .game-container {
         min-height: 500px;
@@ -2499,7 +2454,6 @@ a:hover {
     }
 }
 
-/* Modal 樣式增強 */
 .modal-xl .modal-content {
     max-width: 1200px;
     width: 95%;
@@ -2507,7 +2461,6 @@ a:hover {
     overflow-y: auto;
 }
 
-/* 按鈕樣式增強 */
 #startGameBtn {
     background: linear-gradient(45deg, var(--secondary-color), #45b7aa);
     border: none;
@@ -2539,9 +2492,7 @@ a:hover {
     box-shadow: var(--shadow);
 }
 
-/* ==================== 朋友記憶遊戲樣式 ==================== */
 
-/* 遊戲容器 */
 .game-container {
     width: 100%;
     min-height: 800px;
@@ -2551,7 +2502,6 @@ a:hover {
     overflow: hidden;
 }
 
-/* 遊戲畫面切換 */
 .game-screen {
     display: none;
     width: 100%;
@@ -2572,7 +2522,6 @@ a:hover {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* 遊戲開始畫面 */
 .game-intro {
     text-align: center;
     max-width: 500px;
@@ -2639,7 +2588,6 @@ a:hover {
     outline: none;
 }
 
-/* 音樂選擇器樣式 */
 .music-selector {
     margin: 2rem 0;
     padding: 1.5rem;
@@ -2692,7 +2640,6 @@ a:hover {
     outline: none;
 }
 
-/* 遊戲進行畫面 */
 .game-info {
     width: 100%;
     margin-bottom: 2rem;
@@ -2732,7 +2679,6 @@ a:hover {
     color: var(--secondary-color);
 }
 
-/* 遊戲顯示區 */
 .game-display {
     flex: 1;
     display: flex;
@@ -2815,7 +2761,6 @@ a:hover {
     }
 }
 
-/* 遊戲狀態顯示 */
 .game-status {
     text-align: center;
     padding: 2rem;
@@ -2861,7 +2806,6 @@ a:hover {
     50% { opacity: 1; transform: scale(1.2); }
 }
 
-/* 照片參考網格 */
 .photo-grid-container {
     text-align: center;
     width: 100%;
@@ -2956,7 +2900,6 @@ a:hover {
     flex-shrink: 0;
 }
 
-/* 照片出現動畫 */
 .reference-photo-item.appear {
     animation: photoAppearIn 0.6s ease-out;
 }
@@ -2975,7 +2918,6 @@ a:hover {
     }
 }
 
-/* 名稱選擇區 */
 .name-selection {
     text-align: center;
     width: 100%;
@@ -3048,7 +2990,6 @@ a:hover {
     100% { transform: translateX(0); }
 }
 
-/* 遊戲控制區 */
 .game-controls {
     margin-top: 2rem;
     text-align: center;
@@ -3058,7 +2999,6 @@ a:hover {
     margin: 0 0.5rem;
 }
 
-/* 遊戲結果畫面 */
 .game-result {
     text-align: center;
     max-width: 500px;
@@ -3130,7 +3070,6 @@ a:hover {
     margin: 0 0.5rem;
 }
 
-/* 響應式設計 */
 @media (max-width: 768px) {
     .game-container {
         min-height: 500px;
@@ -3190,7 +3129,6 @@ a:hover {
     }
 }
 
-/* Modal 樣式增強 */
 .modal-xl .modal-content {
     max-width: 1200px;
     width: 95%;
@@ -3198,7 +3136,6 @@ a:hover {
     overflow-y: auto;
 }
 
-/* 按鈕樣式增強 */
 #startGameBtn {
     background: linear-gradient(45deg, var(--secondary-color), #45b7aa);
     border: none;
@@ -3230,7 +3167,6 @@ a:hover {
     box-shadow: var(--shadow);
 }
 
-/* ==================== Photo Roulette ==================== */
 .roulette-section {
     background: var(--surface-color);
     border-radius: var(--radius);
@@ -3332,7 +3268,6 @@ a:hover {
 }
 
 
-/* AI Profile Info */
 .ai-profile-info {
     margin: 15px 0;
     padding: 10px;
@@ -3365,7 +3300,6 @@ a:hover {
     border: 1px solid var(--border-color);
 }
 
-/* 固定遊戲設定樣式 */
 .game-settings {
     margin: 2rem 0;
     padding: 1.5rem;
