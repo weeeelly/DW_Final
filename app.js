@@ -29,6 +29,16 @@ function initEventListeners() {
         openAlbumModal();
     });
 
+    // 遊戲按鈕
+    const startGameBtn = document.getElementById('startGameBtn');
+    if (startGameBtn) {
+        startGameBtn.addEventListener('click', () => {
+            if (window.friendMemoryGame) {
+                window.friendMemoryGame.openGameModal();
+            }
+        });
+    }
+
     // 照片表單提交
     document.getElementById('photoForm').addEventListener('submit', handlePhotoSubmit);
 
@@ -1034,3 +1044,630 @@ async function saveEditedImage() {
         saveBtn.disabled = false;
     }
 }
+
+// ==================== 朋友記憶遊戲 ====================
+
+class FriendMemoryGame {
+    constructor() {
+        this.gameData = null;
+        this.gameSequence = [];
+        this.playerSequence = [];
+        this.currentBeat = 0;
+        this.gamePhase = 'waiting'; // waiting, showing, playing, finished
+        this.difficulty = 6;
+        this.gameTimer = null;
+        this.beatTimer = null;
+        this.startTime = null;
+        this.audio = null;
+        
+        this.initEventListeners();
+    }
+    
+    initEventListeners() {        
+        // 遊戲內按鈕
+        const startGameButton = document.getElementById('startGameButton');
+        if (startGameButton) {
+            startGameButton.addEventListener('click', () => {
+                this.startGame();
+            });
+        }
+        
+        const stopGameBtn = document.getElementById('stopGameBtn');
+        if (stopGameBtn) {
+            stopGameBtn.addEventListener('click', () => {
+                this.stopGame();
+            });
+        }
+        
+        const playAgainBtn = document.getElementById('playAgainBtn');
+        if (playAgainBtn) {
+            playAgainBtn.addEventListener('click', () => {
+                this.resetGame();
+            });
+        }
+        
+        // 難度選擇
+        const difficultySelect = document.getElementById('difficultySelect');
+        if (difficultySelect) {
+            difficultySelect.addEventListener('change', (e) => {
+                this.difficulty = parseInt(e.target.value);
+            });
+        }
+    }
+    
+    async openGameModal() {
+        try {
+            // 載入遊戲數據
+            const response = await fetch('api.php?action=get_game_friends_data');
+            
+            // 檢查回應狀態
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const responseText = await response.text();
+            console.log('API Response:', responseText);
+            
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch (parseError) {
+                console.error('JSON 解析錯誤:', parseError);
+                console.error('原始回應:', responseText);
+                throw new Error('伺服器回應格式錯誤');
+            }
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            if (data.friends && data.friends.length >= 4) {
+                this.gameData = data.friends;
+                this.showModal('gameModal');
+            } else {
+                showToast('需要至少4位好友才能開始遊戲', 'warning');
+            }
+        } catch (error) {
+            console.error('載入遊戲數據失敗:', error);
+            showToast(`載入失敗: ${error.message}`, 'error');
+        }
+    }
+    
+    showModal(modalId) {
+        document.getElementById(modalId).classList.add('active');
+    }
+    
+    hideModal(modalId) {
+        document.getElementById(modalId).classList.remove('active');
+    }
+    
+    async startGame() {
+        try {
+            // 切換到遊戲畫面
+            this.showGameScreen('gamePlayScreen');
+            
+            // 初始化遊戲
+            this.generateGameSequence();
+            this.startTime = Date.now();
+            
+            // 載入背景音樂
+            await this.loadGameMusic();
+            
+            // 播放背景音樂
+            if (this.audio && this.customMusicLoaded) {
+                try {
+                    await this.audio.play();
+                } catch (error) {
+                    console.warn('無法自動播放音樂，請手動點擊播放');
+                }
+            }
+            
+            // 初始化遊戲顯示區域
+            this.initGameDisplay();
+            
+            // 開始顯示階段
+            this.gamePhase = 'showing';
+            this.currentBeat = 1;
+            this.updateGameInfo();
+            
+            // 開始節拍顯示
+            this.startBeatShow();
+            
+        } catch (error) {
+            console.error('開始遊戲失敗:', error);
+            showToast('遊戲啟動失敗', 'error');
+        }
+    }
+    
+    initGameDisplay() {
+        // 初始化遊戲顯示區域
+        const photoDisplay = document.getElementById('photoDisplay');
+        if (photoDisplay) {
+            photoDisplay.innerHTML = `
+                <div class="beat-indicator" id="beatIndicator">♪</div>
+                <img id="currentPhoto" src="" alt="" style="display: none;">
+                <div class="friend-name" id="currentFriendName" style="display: none;"></div>
+            `;
+        }
+        
+        // 隱藏選擇區域
+        const nameSelection = document.getElementById('nameSelection');
+        if (nameSelection) {
+            nameSelection.style.display = 'none';
+        }
+    }
+    
+    generateGameSequence() {
+        // 從好友數據中隨機選擇指定數量的好友
+        const shuffled = [...this.gameData].sort(() => Math.random() - 0.5);
+        this.gameSequence = shuffled.slice(0, this.difficulty);
+        this.playerSequence = [];
+    }
+    
+    async loadGameMusic() {
+        // 嘗試載入自定義音樂
+        const customMusicFile = document.getElementById('customMusicFile');
+        
+        if (this.audio) {
+            this.audio.pause();
+        }
+        
+        if (customMusicFile && customMusicFile.files.length > 0) {
+            // 使用使用者上傳的音樂
+            await this.loadCustomMusic(customMusicFile.files[0]);
+        } else {
+            // 使用 Web Audio API 創建節拍聲
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                this.audioContext = audioContext;
+            } catch (error) {
+                console.warn('無法初始化音頻:', error);
+            }
+        }
+    }
+    
+    async loadCustomMusic(file) {
+        try {
+            const audio = new Audio();
+            audio.src = URL.createObjectURL(file);
+            audio.loop = true;
+            audio.volume = 0.5;
+            
+            // 等待音樂載入
+            await new Promise((resolve, reject) => {
+                audio.addEventListener('loadedmetadata', () => {
+                    this.audio = audio;
+                    this.customMusicLoaded = true;
+                    // 自動計算節拍（BPM）
+                    this.customBPM = parseInt(document.getElementById('bpmInput')?.value) || 120;
+                    resolve();
+                });
+                audio.addEventListener('error', reject);
+            });
+        } catch (error) {
+            console.warn('無法載入自定義音樂:', error);
+        }
+    }
+    
+    getBeatInterval() {
+        if (this.customBPM) {
+            // 根據 BPM 計算節拍間隔（毫秒）
+            return (60 / this.customBPM) * 1000;
+        }
+        return 1000; // 預設 1 秒一拍
+    }
+    
+    playBeatSound() {
+        if (this.audioContext) {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+            
+            oscillator.start(this.audioContext.currentTime);
+            oscillator.stop(this.audioContext.currentTime + 0.1);
+        }
+    }
+    
+    startBeatShow() {
+        // 重置打亂的選項，確保每次新遊戲都會重新打亂
+        this.shuffledOptions = null;
+        
+        let beatCount = 0;
+        const totalBeats = this.difficulty * 3; // 三階段，共 24 拍
+        
+        const beatInterval = setInterval(() => {
+            this.playBeatSound();
+            this.showBeatIndicator();
+            
+            beatCount++;
+            this.currentBeat = beatCount;
+            
+            // 第一階段：準備階段 (1-8拍)
+            if (beatCount <= this.difficulty) {
+                this.gamePhase = 'preparing';
+                this.showPreparationPhase(beatCount);
+            }
+            // 第二階段：展示階段 (9-16拍)
+            else if (beatCount <= this.difficulty * 2) {
+                if (beatCount === this.difficulty + 1) {
+                    this.gamePhase = 'showing';
+                    this.startShowingPhase();
+                }
+                this.showDisplayPhase(beatCount - this.difficulty);
+            }
+            // 第三階段：回答階段 (17-24拍)
+            else {
+                if (beatCount === this.difficulty * 2 + 1) {
+                    this.gamePhase = 'playing';
+                    this.startPlayingPhase();
+                }
+                this.handlePlayerPhase(beatCount - this.difficulty * 2);
+            }
+            
+            this.updateGameInfo();
+            
+            if (beatCount >= totalBeats) {
+                clearInterval(beatInterval);
+                setTimeout(() => {
+                    this.endGame();
+                }, 500);
+            }
+        }, this.getBeatInterval());
+        
+        this.beatTimer = beatInterval;
+    }
+    
+    showPreparationPhase(beat) {
+        const gameDisplay = document.querySelector('.game-display');
+        if (gameDisplay && beat === 1) {
+            // 清空所有內容，避免顯示上次的遊戲內容
+            gameDisplay.innerHTML = `
+                <div class="game-status">
+                    <h3>🛠️ 準備階段</h3>
+                    <p>正在載入遊戲資料...</p>
+                    <div class="preparation-dots">
+                        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 預載入照片資料
+        if (beat <= this.difficulty) {
+            const friend = this.gameSequence[beat - 1];
+            if (friend && friend.photo) {
+                // 預載入照片
+                const img = new Image();
+                img.src = friend.photo.startsWith('http') ? friend.photo : 
+                          friend.photo.startsWith('uploads/') ? friend.photo : 
+                          `uploads/${friend.id}/${friend.photo}`;
+            }
+        }
+    }
+    
+    setupNameSelection() {
+        // 在準備階段就建置好選擇區域和選項
+        const nameSelection = document.getElementById('nameSelection');
+        nameSelection.style.display = 'block';
+        
+        this.generateFixedNameOptions();
+    }
+    
+    generateFixedNameOptions() {
+        const nameGrid = document.getElementById('nameGrid');
+        nameGrid.innerHTML = '';
+        
+        // 如果選項順序還沒確定，就生成並打亂
+        if (!this.shuffledOptions) {
+            const correctNames = this.gameSequence.map(friend => friend.username);
+            const allFriends = [...this.gameData];
+            const distractorNames = allFriends
+                .filter(friend => !correctNames.includes(friend.username))
+                .map(friend => friend.username)
+                .slice(0, 4); // 只取前4個作為干擾項
+            
+            // 合併所有選項並打亂一次
+            const allOptions = [...correctNames, ...distractorNames];
+            this.shuffledOptions = allOptions.sort(() => Math.random() - 0.5);
+        }
+        
+        // 使用已經打亂好的固定順序
+        this.shuffledOptions.forEach(name => {
+            const button = document.createElement('button');
+            button.className = 'name-option';
+            button.textContent = name;
+            button.addEventListener('click', () => this.selectName(name));
+            nameGrid.appendChild(button);
+        });
+    }
+    
+    startShowingPhase() {
+        const gameDisplay = document.querySelector('.game-display');
+        if (gameDisplay) {
+            gameDisplay.innerHTML = `
+                <div class="photo-reference-grid" id="showingGrid"></div>
+                <div class="name-selection" id="nameSelection" style="display: block; margin-top: 2rem;">
+                    <div class="name-grid" id="nameGrid"></div>
+                </div>
+            `;
+        }
+        
+        // 確保選項在這個階段就準備好
+        this.generateFixedNameOptions();
+    }
+    
+    showDisplayPhase(beat) {
+        const showingGrid = document.getElementById('showingGrid');
+        if (!showingGrid) return;
+        
+        // 逐一顯示照片
+        if (beat <= this.difficulty) {
+            const friend = this.gameSequence[beat - 1];
+            const photoSrc = friend.photo && friend.photo !== 'null' && friend.photo !== '' ? 
+                (friend.photo.startsWith('uploads/') || friend.photo.startsWith('/') || friend.photo.startsWith('http') ? 
+                 friend.photo : `uploads/${friend.id}/${friend.photo}`) : '';
+            
+            const photoItem = document.createElement('div');
+            photoItem.className = 'reference-photo-item appear';
+            photoItem.innerHTML = `
+                <div class="photo-order">${beat}</div>
+                ${photoSrc ? `<img src="${photoSrc}" alt="${friend.username}">` : 
+                  `<div class="no-photo">${friend.username.charAt(0)}</div>`}
+            `;
+            showingGrid.appendChild(photoItem);
+        }
+    }
+    
+    startPlayingPhase() {
+        // 選擇區域已經在準備階段建置好，這裡只需初始化狀態
+        this.playerSequence = []; // 重設玩家答案
+        this.playerAnsweredThisBeat = false;
+    }
+    
+    handlePlayerPhase(beat) {
+        // 檢查上一拍是否有回答（除了第一拍）
+        if (beat > 1 && !this.playerAnsweredThisBeat) {
+            // 沒有在節拍點回答，記錄為錯誤
+            this.playerSequence.push({ 
+                name: '未回答', 
+                correct: false,
+                missed: true 
+            });
+        }
+        
+        this.playerAnsweredThisBeat = false; // 重設當前拍的回答狀態
+        
+        // 選項已經在準備階段生成，不需要再更新
+    }
+    
+    showBeatIndicator() {
+        let indicator = document.getElementById('beatIndicator');
+        
+        // 如果找不到指示器，動態創建一個
+        if (!indicator) {
+            const photoDisplay = document.getElementById('photoDisplay');
+            if (photoDisplay) {
+                indicator = document.createElement('div');
+                indicator.id = 'beatIndicator';
+                indicator.className = 'beat-indicator';
+                indicator.textContent = '♪';
+                indicator.style.cssText = `
+                    font-size: 3rem;
+                    opacity: 0.7;
+                    transition: all 0.3s ease;
+                    position: absolute;
+                    z-index: 1;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                `;
+                photoDisplay.appendChild(indicator);
+            }
+        }
+        
+        if (indicator) {
+            indicator.style.transform = 'translate(-50%, -50%) scale(1.2)';
+            indicator.style.opacity = '1';
+            
+            setTimeout(() => {
+                if (indicator) {
+                    indicator.style.transform = 'translate(-50%, -50%) scale(1)';
+                    indicator.style.opacity = '0.7';
+                }
+            }, 200);
+        }
+    }
+    
+    showFriendPhoto(friend, keepVisible = false) {
+        const photoElement = document.getElementById('currentPhoto');
+        const nameElement = document.getElementById('currentFriendName');
+        
+        if (friend.photo && friend.photo !== 'null' && friend.photo !== '') {
+            // 如果是相對路徑，使用原本的邏輯；如果是絕對路徑，直接使用
+            if (friend.photo.startsWith('uploads/') || friend.photo.startsWith('/') || friend.photo.startsWith('http')) {
+                photoElement.src = friend.photo;
+            } else {
+                photoElement.src = `uploads/${friend.id}/${friend.photo}`;
+            }
+            photoElement.style.display = 'block';
+            photoElement.alt = friend.username;
+        } else {
+            // 如果沒有照片，顯示頭像字母
+            photoElement.style.display = 'none';
+        }
+        
+        // 在新模式下，名稱不顯示，只顯示照片
+        if (!keepVisible) {
+            nameElement.textContent = friend.username;
+            nameElement.style.display = 'block';
+            
+            // 短暫顯示後隱藏
+            setTimeout(() => {
+                photoElement.style.display = 'none';
+                nameElement.style.display = 'none';
+            }, 800);
+        }
+        // keepVisible = true 時，照片保持顯示，名稱不顯示
+    }
+    
+    // startPlayerTurn 和 showPhotoGrid 已整合到新的三階段系統中
+    
+    // startPlayerBeat 已整合到新的三階段系統中
+    
+    selectName(name) {
+        // 檢查是否在遊戲中且還沒有回答這一拍
+        if (this.gamePhase !== 'playing' || this.playerAnsweredThisBeat) {
+            return;
+        }
+        
+        const expectedName = this.gameSequence[this.playerSequence.length].username;
+        const isCorrect = name === expectedName;
+        
+        // 記錄這一拍已經回答
+        this.playerAnsweredThisBeat = true;
+        
+        // 視覺反饋
+        const buttons = document.querySelectorAll('.name-option');
+        buttons.forEach(btn => {
+            if (btn.textContent === name) {
+                btn.className = 'name-option ' + (isCorrect ? 'correct' : 'incorrect');
+            }
+            btn.disabled = true;
+        });
+        
+        // 記錄答案
+        this.playerSequence.push({ name, correct: isCorrect });
+        
+        // 簡短的視覺反饋後重新啟用按鈕
+        setTimeout(() => {
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                btn.className = 'name-option';
+            });
+        }, 300);
+    }
+    
+    endGame() {
+        this.gamePhase = 'finished';
+        
+        if (this.beatTimer) {
+            clearInterval(this.beatTimer);
+        }
+        
+        const correctCount = this.playerSequence.filter(p => p.correct).length;
+        const accuracy = Math.round((correctCount / this.difficulty) * 100);
+        const gameTime = Math.round((Date.now() - this.startTime) / 1000);
+        
+        // 顯示結果
+        this.showGameResults(accuracy, gameTime, correctCount);
+    }
+    
+    showGameResults(accuracy, gameTime, correctCount) {
+        this.showGameScreen('gameResultScreen');
+        
+        const resultIcon = document.getElementById('resultIcon');
+        const resultTitle = document.getElementById('resultTitle');
+        
+        // 計算錯過的節拍數
+        const missedBeats = this.playerSequence.filter(p => p.missed).length;
+        const wrongAnswers = this.playerSequence.filter(p => !p.correct && !p.missed).length;
+        
+        if (accuracy >= 80) {
+            resultIcon.textContent = '🏆';
+            resultTitle.textContent = '太棒了！節拍感超強！';
+        } else if (accuracy >= 60) {
+            resultIcon.textContent = '👍';
+            resultTitle.textContent = '不錯哦！繼續練習節拍感！';
+        } else {
+            resultIcon.textContent = '😅';
+            resultTitle.textContent = '多練習節拍感，會越來越好！';
+        }
+        
+        document.getElementById('accuracyRate').textContent = `${accuracy}%`;
+        document.getElementById('gameTime').textContent = `${gameTime}秒`;
+        
+        // 顯示詳細統計
+        const gameDifficultyElement = document.getElementById('gameDifficulty');
+        const difficultyText = {
+            4: '簡單',
+            6: '普通',
+            8: '困難'
+        };
+        gameDifficultyElement.innerHTML = `
+            <div>${difficultyText[this.difficulty]}</div>
+            <small style="color: var(--text-secondary); font-size: 0.8em;">
+                正確: ${correctCount} | 錯誤: ${wrongAnswers} | 錯過: ${missedBeats}
+            </small>
+        `;
+    }
+    
+    showGameScreen(screenId) {
+        document.querySelectorAll('.game-screen').forEach(screen => {
+            screen.classList.remove('active');
+        });
+        document.getElementById(screenId).classList.add('active');
+    }
+    
+    updateGameInfo() {
+        const totalBeats = this.difficulty * 3;
+        document.getElementById('currentBeat').textContent = this.currentBeat;
+        
+        const phaseText = {
+            'preparing': `準備階段 - 第${this.currentBeat}拍，正在載入資料...`,
+            'showing': `展示階段 - 第${this.currentBeat}拍，記住照片順序！`,
+            'playing': `回答階段 - 第${this.currentBeat}拍，按節拍點擊名稱！`,
+            'finished': '遊戲結束'
+        };
+        document.getElementById('gamePhase').textContent = phaseText[this.gamePhase] || '準備中';
+        
+        const progress = (this.currentBeat / totalBeats) * 100;
+        document.getElementById('progressFill').style.width = `${progress}%`;
+    }
+    
+    stopGame() {
+        if (confirm('確定要結束遊戲嗎？')) {
+            if (this.audio) {
+                this.audio.pause();
+                this.audio.currentTime = 0;
+            }
+            this.resetGame();
+            this.hideModal('gameModal');
+        }
+    }
+    
+    resetGame() {
+        if (this.beatTimer) {
+            clearInterval(this.beatTimer);
+        }
+        
+        if (this.audio) {
+            this.audio.pause();
+            this.audio.currentTime = 0;
+        }
+        
+        this.gamePhase = 'waiting';
+        this.currentBeat = 0;
+        this.gameSequence = [];
+        this.playerSequence = [];
+        this.customMusicLoaded = false;
+        
+        const nameSelection = document.getElementById('nameSelection');
+        if (nameSelection) {
+            nameSelection.style.display = 'none';
+        }
+        
+        this.showGameScreen('gameStartScreen');
+    }
+}
+
+// 初始化遊戲
+document.addEventListener('DOMContentLoaded', () => {
+    // 初始化遊戲實例
+    window.friendMemoryGame = new FriendMemoryGame();
+});

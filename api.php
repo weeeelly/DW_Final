@@ -101,6 +101,12 @@ switch ($action) {
         analyzeUserProfile($conn, $userId);
         break;
     
+    // ==================== 遊戲相關 ====================
+    
+    case 'get_game_friends_data':
+        getGameFriendsData($conn, $userId);
+        break;
+    
     // ==================== 按讚相關 ====================
     
     case 'toggle_like':
@@ -1207,6 +1213,78 @@ function deleteComment($conn, $userId) {
     }
     
     $stmt->close();
+}
+
+// ==================== 遊戲相關函數 ====================
+
+function getGameFriendsData($conn, $userId) {
+    try {
+        // 獲取好友列表和他們的照片
+        $stmt = $conn->prepare("
+            SELECT DISTINCT u.id, u.username, u.avatar
+            FROM users u
+            JOIN friendships f ON (f.friend_id = u.id AND f.user_id = ?)
+            WHERE f.status = 'accepted'
+            ORDER BY RAND()
+            LIMIT 15
+        ");
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        $friends = [];
+        while ($row = $result->fetch_assoc()) {
+            $friendId = $row['id'];
+            
+            // 為每個好友獲取一張隨機照片
+            $photoStmt = $conn->prepare("
+                SELECT image_url, caption 
+                FROM photos 
+                WHERE user_id = ? AND image_url IS NOT NULL AND image_url != ''
+                ORDER BY RAND() 
+                LIMIT 1
+            ");
+            $photoStmt->bind_param("i", $friendId);
+            $photoStmt->execute();
+            $photoResult = $photoStmt->get_result();
+            
+            if ($photoRow = $photoResult->fetch_assoc()) {
+                $row['photo'] = $photoRow['image_url'];
+                $row['photo_caption'] = $photoRow['caption'];
+                $friends[] = $row;
+            }
+            $photoStmt->close();
+        }
+    
+        $stmt->close();
+        
+        // 如果好友數量不足，添加一些預設的測試數據
+        $testPhotos = [
+            'https://picsum.photos/300/300?random=1',
+            'https://picsum.photos/300/300?random=2',
+            'https://picsum.photos/300/300?random=3',
+            'https://picsum.photos/300/300?random=4',
+            'https://picsum.photos/300/300?random=5',
+            'https://picsum.photos/300/300?random=6',
+            'https://picsum.photos/300/300?random=7',
+            'https://picsum.photos/300/300?random=8'
+        ];
+        
+        while (count($friends) < 8) {
+            $index = count($friends);
+            $friends[] = [
+                'id' => 'demo_' . ($index + 1),
+                'username' => '測試好友' . ($index + 1),
+                'avatar' => null,
+                'photo' => $testPhotos[$index] ?? 'https://picsum.photos/300/300?random=' . ($index + 10),
+                'photo_caption' => '測試照片 ' . ($index + 1)
+            ];
+        }
+        
+        jsonResponse(['friends' => $friends]);
+    } catch (Exception $e) {
+        jsonResponse(['error' => '載入遊戲數據失敗: ' . $e->getMessage()], 500);
+    }
 }
 
 function getPhotoRoulette($conn, $userId) {

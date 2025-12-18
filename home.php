@@ -99,6 +99,9 @@ $conn->close();
                     <h2 id="currentAlbumTitle">全部照片</h2>
                 </div>
                 <div class="header-actions">
+                    <button class="btn btn-secondary" id="startGameBtn">
+                        <span>🎮</span> 朋友記憶遊戲
+                    </button>
                     <button class="btn btn-primary" id="addPhotoBtn">
                         <span>+</span> 新增照片
                     </button>
@@ -355,6 +358,114 @@ $conn->close();
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary modal-cancel">取消</button>
                     <button type="button" class="btn btn-primary" id="saveEditedImage">保存修圖</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 朋友記憶遊戲 Modal -->
+    <div class="modal" id="gameModal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content modal-xl">
+            <div class="modal-header">
+                <h3>🎮 朋友記憶遊戲</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="game-container">
+                <!-- 遊戲開始畫面 -->
+                <div class="game-screen active" id="gameStartScreen">
+                    <div class="game-intro">
+                        <h2>準備挑戰你的記憶力！</h2>
+                        <p>遊戲規則：</p>
+                        <ul>
+                            <li>🎵 點擊開始後會播放背景音樂</li>
+                            <li>📸 預備拍 8 拍，每拍會顯示一張朋友的照片</li>
+                            <li>🧠 記住照片出現的順序</li>
+                            <li>👆 接下來 8 拍，按順序點擊正確的朋友名稱</li>
+                        </ul>
+                        <div class="difficulty-selector">
+                            <label>選擇難度：</label>
+                            <select id="difficultySelect">
+                                <option value="4">簡單 (4張照片)</option>
+                                <option value="6" selected>普通 (6張照片)</option>
+                                <option value="8">困難 (8張照片)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="music-selector">
+                            <label>🎵 自定義背景音樂（可選）：</label>
+                            <input type="file" id="customMusicFile" accept="audio/*">
+                            <small class="form-hint">支援 MP3、WAV、OGG 等音頻格式</small>
+                            
+                            <div class="bpm-selector">
+                                <label for="bpmInput">節拍速度 (BPM)：</label>
+                                <input type="number" id="bpmInput" min="60" max="180" value="120" placeholder="120">
+                                <small class="form-hint">建議：60-180 BPM，預設 120</small>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-lg" id="startGameButton">
+                            🚀 開始遊戲
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 遊戲進行畫面 -->
+                <div class="game-screen" id="gamePlayScreen">
+                    <div class="game-info">
+                        <div class="game-progress">
+                            <span>第 <span id="currentBeat">1</span> 拍</span>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                        </div>
+                        <div class="game-phase" id="gamePhase">準備階段</div>
+                    </div>
+                    
+                    <div class="game-display">
+                        <!-- 顯示朋友照片的區域 -->
+                        <div class="photo-display" id="photoDisplay">
+                            <div class="beat-indicator" id="beatIndicator">♪</div>
+                            <img id="currentPhoto" src="" alt="" style="display: none;">
+                            <div class="friend-name" id="currentFriendName" style="display: none;"></div>
+                        </div>
+                        
+                        <!-- 選擇朋友名稱的區域 -->
+                        <div class="name-selection" id="nameSelection" style="display: none;">
+                            <h3>點擊朋友的名稱 (按照剛才照片出現的順序)</h3>
+                            <div class="name-grid" id="nameGrid"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="game-controls">
+                        <button class="btn btn-secondary" id="pauseGameBtn" style="display: none;">⏸️ 暫停</button>
+                        <button class="btn btn-danger" id="stopGameBtn">⏹️ 結束遊戲</button>
+                    </div>
+                </div>
+                
+                <!-- 遊戲結果畫面 -->
+                <div class="game-screen" id="gameResultScreen">
+                    <div class="game-result">
+                        <div class="result-icon" id="resultIcon">🎉</div>
+                        <h2 id="resultTitle">恭喜過關！</h2>
+                        <div class="result-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">正確率</span>
+                                <span class="stat-value" id="accuracyRate">100%</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">遊戲時間</span>
+                                <span class="stat-value" id="gameTime">30秒</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">難度</span>
+                                <span class="stat-value" id="gameDifficulty">普通</span>
+                            </div>
+                        </div>
+                        <div class="result-actions">
+                            <button class="btn btn-primary" id="playAgainBtn">🔄 再玩一次</button>
+                            <button class="btn btn-secondary modal-cancel">返回</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
