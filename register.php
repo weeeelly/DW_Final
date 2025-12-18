@@ -71,7 +71,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="auth-card">
             <div class="auth-header">
                 <div class="logo">
-                    <span class="logo-icon">📸</span>
                     <h1>Photo Rewind</h1>
                 </div>
                 <p class="tagline">建立帳號，開始記錄你的故事</p>

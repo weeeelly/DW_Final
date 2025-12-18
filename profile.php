@@ -75,7 +75,6 @@ $conn->close();
         <header class="profile-header-nav">
             <a href="home.php" class="back-btn">← 返回</a>
             <div class="logo">
-                <span class="logo-icon">📸</span>
                 <span>Photo Rewind</span>
             </div>
             <a href="friends.php" class="nav-link">好友</a>
@@ -98,7 +97,7 @@ $conn->close();
                 <?php if (!empty($profileUser['ai_estimated_age'])): ?>
                 <div class="ai-profile-info">
                     <div class="ai-age-badge">
-                        📷 照片年齡：<?php echo h($profileUser['ai_estimated_age']); ?>
+                        照片年齡：<?php echo h($profileUser['ai_estimated_age']); ?>
                     </div>
                     <?php 
                     $tags = json_decode($profileUser['ai_tags'], true);
@@ -114,7 +113,7 @@ $conn->close();
                 <?php elseif ($isSelf): ?>
                 <div class="ai-profile-action">
                     <button class="btn btn-primary btn-sm" id="aiAnalyzeBtn" onclick="handleAiAnalyze()">
-                        📷 分析照片年齡
+                        分析照片年齡
                     </button>
                 </div>
                 <?php endif; ?>
@@ -163,7 +162,7 @@ $conn->close();
                 <div class="loading">載入中...</div>
             </div>
             <div class="empty-state" id="emptyState" style="display: none;">
-                <div class="empty-icon">📷</div>
+                <div class="empty-icon"></div>
                 <h3>還沒有照片</h3>
             </div>
         </div>

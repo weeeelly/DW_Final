@@ -19,7 +19,6 @@ $username = getCurrentUsername();
         <header class="profile-header-nav">
             <a href="home.php" class="back-btn">← 返回</a>
             <div class="logo">
-                <span class="logo-icon">📸</span>
                 <span>Photo Rewind</span>
             </div>
             <a href="profile.php" class="nav-link">我的主頁</a>
@@ -27,7 +26,7 @@ $username = getCurrentUsername();
         
         <div class="friends-container">
             <div class="roulette-section">
-                <h2>🎲 Photo Roulette</h2>
+                <h2>Photo Roulette</h2>
                 <div id="rouletteGame" class="roulette-game">
                     <div class="roulette-start">
                         <p>猜猜這張照片是哪位好友拍的？</p>
@@ -49,7 +48,7 @@ $username = getCurrentUsername();
             </div>
 
             <div class="search-section">
-                <h2>🔍 尋找好友</h2>
+                <h2>尋找好友</h2>
                 <div class="search-box">
                     <input type="text" id="searchInput" placeholder="輸入使用者名稱搜尋...">
                     <button class="btn btn-primary" onclick="searchUsers()">搜尋</button>
@@ -58,14 +57,14 @@ $username = getCurrentUsername();
             </div>
             
             <div class="requests-section">
-                <h2>📬 好友請求 <span class="badge" id="requestBadge"></span></h2>
+                <h2>好友請求 <span class="badge" id="requestBadge"></span></h2>
                 <div class="requests-list" id="requestsList">
                     <p class="empty-text">載入中...</p>
                 </div>
             </div>
             
             <div class="friends-section">
-                <h2>👥 我的好友 <span class="badge" id="friendBadge"></span></h2>
+                <h2>我的好友 <span class="badge" id="friendBadge"></span></h2>
                 <div class="friends-list" id="friendsList">
                     <p class="empty-text">載入中...</p>
                 </div>
@@ -342,11 +341,11 @@ $username = getCurrentUsername();
             resultDiv.style.display = 'block';
             
             if (selectedId === correctId) {
-                resultTitle.textContent = '🎉 答對了！';
+                resultTitle.textContent = '答對了！';
                 resultTitle.className = 'success-text';
                 resultText.textContent = `沒錯，這就是 ${selectedName} 的照片！`;
             } else {
-                resultTitle.textContent = '❌ 答錯了...';
+                resultTitle.textContent = '答錯了...';
                 resultTitle.className = 'error-text';
                 resultText.textContent = `可惜，這不是 ${selectedName} 的照片。`;
             }

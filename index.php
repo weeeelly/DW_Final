@@ -53,7 +53,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="auth-card">
             <div class="auth-header">
                 <div class="logo">
-                    <span class="logo-icon">📸</span>
                     <h1>Photo Rewind</h1>
                 </div>
                 <p class="tagline">紀錄生活的每一個美好瞬間</p>
@@ -86,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <div class="demo-info">
                 <p><strong>測試帳號：</strong></p>
-                <p>帳號：willy / 密碼：willy0310</p>
+                <p>帳號：demo / 密碼：password123</p>
             </div>
         </div>
     </div>

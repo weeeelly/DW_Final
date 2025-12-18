@@ -40,7 +40,6 @@ $conn->close();
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <span class="logo-icon">📸</span>
                     <h1>Photo Rewind</h1>
                 </div>
             </div>
@@ -53,8 +52,8 @@ $conn->close();
             <nav class="sidebar-nav">
                 <div class="nav-section">
                     <ul class="nav-links">
-                        <li><a href="profile.php" class="nav-link-item">👤 我的主頁</a></li>
-                        <li><a href="friends.php" class="nav-link-item">👥 好友</a></li>
+                        <li><a href="profile.php" class="nav-link-item">我的主頁</a></li>
+                        <li><a href="friends.php" class="nav-link-item">好友</a></li>
                     </ul>
                 </div>
                 
@@ -66,12 +65,12 @@ $conn->close();
                             data-album-id="<?php echo $album['id']; ?>"
                             data-album-name="<?php echo h($album['name']); ?>"
                             data-is-default="<?php echo $album['is_default'] ? '1' : '0'; ?>">
-                            <span class="album-icon"><?php echo $album['is_default'] ? '📁' : '📂'; ?></span>
+                            <span class="album-icon"></span>
                             <span class="album-name"><?php echo h($album['name']); ?></span>
                             <?php if (!$album['is_default']): ?>
                             <div class="album-actions">
-                                <button class="btn-icon edit-album-btn" title="編輯相簿">✏️</button>
-                                <button class="btn-icon delete-album-btn" title="刪除相簿">🗑️</button>
+                                <button class="btn-icon edit-album-btn" title="編輯相簿">Edit</button>
+                                <button class="btn-icon delete-album-btn" title="刪除相簿">Del</button>
                             </div>
                             <?php endif; ?>
                         </li>
@@ -91,12 +90,12 @@ $conn->close();
         <main class="main-content">
             <header class="main-header">
                 <div class="header-left">
-                    <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+                    <button class="mobile-menu-btn" id="mobileMenuBtn">Menu</button>
                     <h2 id="currentAlbumTitle">全部照片</h2>
                 </div>
                 <div class="header-actions">
-                    <button class="btn btn-secondary" id="startGameBtn">
-                        <span>🎮</span> 朋友記憶遊戲
+                    <button class="btn btn-primary" id="startGameBtn">
+                        朋友記憶遊戲
                     </button>
                     <button class="btn btn-primary" id="addPhotoBtn">
                         <span>+</span> 新增照片
@@ -109,7 +108,7 @@ $conn->close();
             </div>
             
             <div class="empty-state" id="emptyState" style="display: none;">
-                <div class="empty-icon">📷</div>
+                <div class="empty-icon"></div>
                 <h3>還沒有照片</h3>
                 <p>點擊上方「新增照片」開始記錄你的故事</p>
             </div>
@@ -131,7 +130,7 @@ $conn->close();
                     <div class="file-upload-wrapper">
                         <input type="file" id="imageFile" name="image" accept="image/jpeg,image/png,image/gif,image/webp">
                         <div class="file-upload-btn">
-                            <span class="file-upload-icon">📁</span>
+                            <span class="file-upload-icon"></span>
                             <span class="file-upload-text">點擊選擇圖片或拖曳檔案至此</span>
                         </div>
                         <span class="file-name" id="fileName"></span>
@@ -354,39 +353,36 @@ $conn->close();
         <div class="modal-overlay"></div>
         <div class="modal-content modal-xl">
             <div class="modal-header">
-                <h3>🎮 朋友記憶遊戲</h3>
+                <h3>朋友記憶遊戲</h3>
                 <button class="modal-close">&times;</button>
             </div>
             <div class="game-container">
                 <div class="game-screen active" id="gameStartScreen">
                     <div class="game-intro">
-                        <h2>準備挑戰你的記憶力！</h2>
+                        <h2>準備挑戰你的反應力！</h2>
                         <p>遊戲規則：</p>
                         <ul>
-                            <li>🎵 點擊開始後會播放背景音樂</li>
-                            <li>📸 預備拍 8 拍，每拍會顯示一張朋友的照片</li>
-                            <li>🧠 記住照片出現的順序</li>
-                            <li>👆 接下來 8 拍，按順序點擊正確的朋友名稱</li>
+                            <li>點擊開始後會播放背景音樂</li>
+                            <li>預備拍 8 拍，每拍會顯示一張朋友的照片</li>
+                            <li>記住照片出現的順序</li>
+                            <li>接下來 8 拍，按順序點擊正確的朋友名稱</li>
                         </ul>
                         <div class="game-settings">
-                            <h3>🎯 固定遊戲設定</h3>
+                            <h3>固定遊戲設定</h3>
                             <div class="settings-info">
                                 <div class="setting-item">
-                                    <span class="setting-icon">📸</span>
                                     <span class="setting-text">8張照片（固定難度）</span>
                                 </div>
                                 <div class="setting-item">
-                                    <span class="setting-icon">🎵</span>
                                     <span class="setting-text">內建背景音樂</span>
                                 </div>
                                 <div class="setting-item">
-                                    <span class="setting-icon">⚡</span>
                                     <span class="setting-text">180 BPM（快節奏）</span>
                                 </div>
                             </div>
                         </div>
                         <button class="btn btn-primary btn-lg" id="startGameButton">
-                            🚀 開始遊戲
+                            開始遊戲
                         </button>
                     </div>
                 </div>
@@ -404,7 +400,7 @@ $conn->close();
                     
                     <div class="game-display">
                         <div class="photo-display" id="photoDisplay">
-                            <div class="beat-indicator" id="beatIndicator">♪</div>
+                            <div class="beat-indicator" id="beatIndicator"></div>
                             <img id="currentPhoto" src="" alt="" style="display: none;">
                             <div class="friend-name" id="currentFriendName" style="display: none;"></div>
                         </div>
@@ -416,14 +412,14 @@ $conn->close();
                     </div>
                     
                     <div class="game-controls">
-                        <button class="btn btn-secondary" id="pauseGameBtn" style="display: none;">⏸️ 暫停</button>
-                        <button class="btn btn-danger" id="stopGameBtn">⏹️ 結束遊戲</button>
+                        <button class="btn btn-secondary" id="pauseGameBtn" style="display: none;">暫停</button>
+                        <button class="btn btn-danger" id="stopGameBtn">結束遊戲</button>
                     </div>
                 </div>
                 
                 <div class="game-screen" id="gameResultScreen">
                     <div class="game-result">
-                        <div class="result-icon" id="resultIcon">🎉</div>
+                        <div class="result-icon" id="resultIcon"></div>
                         <h2 id="resultTitle">恭喜過關！</h2>
                         <div class="result-stats">
                             <div class="stat-item">
@@ -440,7 +436,7 @@ $conn->close();
                             </div>
                         </div>
                         <div class="result-actions">
-                            <button class="btn btn-primary" id="playAgainBtn">🔄 再玩一次</button>
+                            <button class="btn btn-primary" id="playAgainBtn">再玩一次</button>
                             <button class="btn btn-secondary modal-cancel">返回</button>
                         </div>
                     </div>
