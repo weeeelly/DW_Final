@@ -16,7 +16,6 @@ if (file_exists(__DIR__ . '/.env')) {
 
 define('DB_HOST', 'localhost');
 define('DB_USER', 'CVML');
-
 define('DB_PASS', '114DWP2025');
 define('DB_NAME', 'photo_rewind');
 
