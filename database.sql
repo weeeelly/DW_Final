@@ -107,14 +107,14 @@ INSERT INTO photos (user_id, album_id, image_url, caption, is_public) VALUES
 (1, 4, 'uploads/1/photo-1504674900247-0877df9cc836.jpeg', '超好吃的義大利麵', TRUE),
 (1, 4, 'uploads/1/photo-1565299624946-b28f40a0ae38.jpeg', '週末在家做披薩', TRUE),
 
-(2, 5, 'uploads/2/photo-1518837695005-2083093ee35b?w=400', '早晨的咖啡時光', TRUE),
-(2, 6, 'uploads/2/photo-1542281286-9e0a16bb7366?w=400', '今天的讀書筆記', TRUE),
+(2, 5, 'uploads/2/photo-1518837695005-2083093ee35b.jpeg', '早晨的咖啡時光', TRUE),
+(2, 6, 'uploads/2/photo-1542281286-9e0a16bb7366.jpeg', '今天的讀書筆記', TRUE),
 
-(3, 7, 'uploads/3/photo-1441974231531-c6227db76b6e?w=400', '森林裡的陽光', TRUE),
-(3, 8, 'uploads/3/photo-1469474968028-56623f02e42e?w=400', '山間的小溪', TRUE),
+(3, 7, 'uploads/3/photo-1441974231531-c6227db76b6e.jpeg', '森林裡的陽光', TRUE),
+(3, 8, 'uploads/3/photo-1469474968028-56623f02e42e.jpeg', '山間的小溪', TRUE),
 
-(4, 9, 'uploads/4/photo-1461749280684-dccba630e2f6?w=400', '今天的工作環境', TRUE),
-(4, 10,'uploads/4/photo-1498050108023-c5249f4df085?w=400', '新買的機械鍵盤', TRUE);
+(4, 9, 'uploads/4/photo-1461749280684-dccba630e2f6.jpeg', '今天的工作環境', TRUE),
+(4, 10,'uploads/4/photo-1498050108023-c5249f4df085.jpeg', '新買的機械鍵盤', TRUE);
 
 INSERT INTO friendships (user_id, friend_id, status) VALUES 
 (1, 2, 'accepted'),
