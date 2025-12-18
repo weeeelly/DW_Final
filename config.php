@@ -15,10 +15,10 @@ if (file_exists(__DIR__ . '/.env')) {
 }
 
 define('DB_HOST', 'localhost');
-define('DB_USER', 'cvml');
+define('DB_USER', 'CVML');
 
-define('DB_PASS', 'dwpcvml2025');
-define('DB_NAME', 'simple_retro');
+define('DB_PASS', '114DWP2025');
+define('DB_NAME', 'photo_rewind');
 
 function getDBConnection() {
     $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);

@@ -1,5 +1,5 @@
-CREATE DATABASE IF NOT EXISTS simple_retro CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE simple_retro;
+CREATE DATABASE IF NOT EXISTS photo_rewind CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE photo_rewind;
 
 DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS likes;
