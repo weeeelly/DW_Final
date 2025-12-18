@@ -1,4 +1,4 @@
-# Simple Retro - 簡易照片日記
+# Photo Rewind - 簡易照片日記
 
 一個使用 PHP、MySQL、HTML、CSS 和 JavaScript 製作的照片日記網站，模仿 Retro 的介面風格。
 

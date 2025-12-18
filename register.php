@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Retro - 註冊</title>
+    <title>Photo Rewind - 註冊</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="auth-header">
                 <div class="logo">
                     <span class="logo-icon">📸</span>
-                    <h1>Simple Retro</h1>
+                    <h1>Photo Rewind</h1>
                 </div>
                 <p class="tagline">建立帳號，開始記錄你的故事</p>
             </div>

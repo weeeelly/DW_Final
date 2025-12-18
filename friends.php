@@ -10,7 +10,7 @@ $username = getCurrentUsername();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>好友 - Simple Retro</title>
+    <title>好友 - Photo Rewind</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
@@ -21,7 +21,7 @@ $username = getCurrentUsername();
             <a href="home.php" class="back-btn">← 返回</a>
             <div class="logo">
                 <span class="logo-icon">📸</span>
-                <span>Simple Retro</span>
+                <span>Photo Rewind</span>
             </div>
             <a href="profile.php" class="nav-link">我的主頁</a>
         </header>

@@ -33,7 +33,7 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Retro - 我的照片日記</title>
+    <title>Photo Rewind - 我的照片日記</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
@@ -44,7 +44,7 @@ $conn->close();
             <div class="sidebar-header">
                 <div class="logo">
                     <span class="logo-icon">📸</span>
-                    <h1>Simple Retro</h1>
+                    <h1>Photo Rewind</h1>
                 </div>
             </div>
             

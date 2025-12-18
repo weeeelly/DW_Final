@@ -71,7 +71,7 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo h($profileUser['username']); ?> - Simple Retro</title>
+    <title><?php echo h($profileUser['username']); ?> - Photo Rewind</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
@@ -82,7 +82,7 @@ $conn->close();
             <a href="home.php" class="back-btn">← 返回</a>
             <div class="logo">
                 <span class="logo-icon">📸</span>
-                <span>Simple Retro</span>
+                <span>Photo Rewind</span>
             </div>
             <a href="friends.php" class="nav-link">好友</a>
         </header>
