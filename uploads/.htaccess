@@ -1,0 +1,15 @@
+# 只允許存取圖片檔案
+<FilesMatch "\.(?i:jpg|jpeg|png|gif|webp)$">
+    Allow from all
+</FilesMatch>
+
+# 禁止存取其他檔案
+<FilesMatch "\.(?i:php|php3|php4|php5|phtml|pl|py|jsp|asp|htm|html|shtml|sh|cgi)$">
+    Deny from all
+</FilesMatch>
+
+# 禁止目錄列表
+Options -Indexes
+
+# 禁止執行 PHP
+php_flag engine off
