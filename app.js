@@ -593,40 +593,15 @@ function closeAllModals() {
     document.body.style.overflow = '';
 }
 
-function showToast(message, type = 'success') {
-    const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = `toast toast - ${type} `;
-    toast.textContent = message;
 
-    container.appendChild(toast);
-
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        toast.style.transform = 'translateX(100%)';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
 
 function toggleSidebar() {
     document.querySelector('.sidebar').classList.toggle('active');
 }
 
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
 
-function formatDate(dateStr) {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('zh-TW', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-    });
-}
+
+
 
 let imageEditor = {
     currentPhotoId: null,
@@ -966,16 +941,16 @@ class FriendMemoryGame {
         this.playerSequence = [];
         this.currentBeat = 0;
         this.gamePhase = 'waiting';
-        this.difficulty = 8; 
+        this.difficulty = 8;
         this.fixedBPM = 180;
         this.gameTimer = null;
         this.beatTimer = null;
         this.startTime = null;
         this.audio = null;
-        
+
         this.initEventListeners();
     }
-    
+
     initEventListeners() {
         const startGameButton = document.getElementById('startGameButton');
         if (startGameButton) {
@@ -983,34 +958,34 @@ class FriendMemoryGame {
                 this.startGame();
             });
         }
-        
+
         const stopGameBtn = document.getElementById('stopGameBtn');
         if (stopGameBtn) {
             stopGameBtn.addEventListener('click', () => {
                 this.stopGame();
             });
         }
-        
+
         const playAgainBtn = document.getElementById('playAgainBtn');
         if (playAgainBtn) {
             playAgainBtn.addEventListener('click', () => {
                 this.resetGame();
             });
         }
-        
+
     }
-    
+
     async openGameModal() {
         try {
             const response = await fetch('api.php?action=get_game_friends_data');
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
+
             const responseText = await response.text();
             console.log('API Response:', responseText);
-            
+
             let data;
             try {
                 data = JSON.parse(responseText);
@@ -1019,11 +994,11 @@ class FriendMemoryGame {
                 console.error('原始回應:', responseText);
                 throw new Error('伺服器回應格式錯誤');
             }
-            
+
             if (data.error) {
                 throw new Error(data.error);
             }
-            
+
             if (data.friends && data.friends.length >= 4) {
                 this.gameData = data.friends;
                 this.showModal('gameModal');
@@ -1035,24 +1010,24 @@ class FriendMemoryGame {
             showToast(`載入失敗: ${error.message}`, 'error');
         }
     }
-    
+
     showModal(modalId) {
         document.getElementById(modalId).classList.add('active');
     }
-    
+
     hideModal(modalId) {
         document.getElementById(modalId).classList.remove('active');
     }
-    
+
     async startGame() {
         try {
             this.showGameScreen('gamePlayScreen');
-            
+
             this.generateGameSequence();
             this.startTime = Date.now();
-            
+
             await this.loadGameMusic();
-            
+
             if (this.audio && this.customMusicLoaded) {
                 try {
                     await this.audio.play();
@@ -1060,21 +1035,21 @@ class FriendMemoryGame {
                     console.warn('無法自動播放音樂，請手動點擊播放');
                 }
             }
-            
+
             this.initGameDisplay();
-            
+
             this.gamePhase = 'showing';
             this.currentBeat = 1;
             this.updateGameInfo();
-            
+
             this.startBeatShow();
-            
+
         } catch (error) {
             console.error('開始遊戲失敗:', error);
             showToast('遊戲啟動失敗', 'error');
         }
     }
-    
+
     initGameDisplay() {
         const photoDisplay = document.getElementById('photoDisplay');
         if (photoDisplay) {
@@ -1084,29 +1059,29 @@ class FriendMemoryGame {
                 <div class="friend-name" id="currentFriendName" style="display: none;"></div>
             `;
         }
-        
+
         const nameSelection = document.getElementById('nameSelection');
         if (nameSelection) {
             nameSelection.style.display = 'none';
         }
     }
-    
+
     generateGameSequence() {
         const shuffled = [...this.gameData].sort(() => Math.random() - 0.5);
         this.gameSequence = shuffled.slice(0, 8);
         this.playerSequence = [];
     }
-    
+
     async loadGameMusic() {
         if (this.audio) {
             this.audio.pause();
         }
-        
+
         try {
             const audio = new Audio('game_music.m4a');
             audio.loop = true;
             audio.volume = 0.3;
-            
+
             this.audio = audio;
             this.customMusicLoaded = true;
         } catch (error) {
@@ -1119,14 +1094,14 @@ class FriendMemoryGame {
             }
         }
     }
-    
+
     async loadCustomMusic(file) {
         try {
             const audio = new Audio();
             audio.src = URL.createObjectURL(file);
             audio.loop = true;
             audio.volume = 0.5;
-            
+
             await new Promise((resolve, reject) => {
                 audio.addEventListener('loadedmetadata', () => {
                     this.audio = audio;
@@ -1140,41 +1115,41 @@ class FriendMemoryGame {
             console.warn('無法載入自定義音樂:', error);
         }
     }
-    
+
     getBeatInterval() {
         return (60 / this.fixedBPM) * 1000;
     }
-    
+
     playBeatSound() {
         if (this.audioContext) {
             const oscillator = this.audioContext.createOscillator();
             const gainNode = this.audioContext.createGain();
-            
+
             oscillator.connect(gainNode);
             gainNode.connect(this.audioContext.destination);
-            
+
             oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
             gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
             gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
-            
+
             oscillator.start(this.audioContext.currentTime);
             oscillator.stop(this.audioContext.currentTime + 0.1);
         }
     }
-    
+
     startBeatShow() {
         this.shuffledOptions = null;
-        
+
         let beatCount = 0;
         const totalBeats = 8 * 3;
-        
+
         const beatInterval = setInterval(() => {
             this.playBeatSound();
             this.showBeatIndicator();
-            
+
             beatCount++;
             this.currentBeat = beatCount;
-            
+
             if (beatCount <= 8) {
                 this.gamePhase = 'preparing';
                 this.showPreparationPhase(beatCount);
@@ -1193,9 +1168,9 @@ class FriendMemoryGame {
                 }
                 this.handlePlayerPhase(beatCount - 16);
             }
-            
+
             this.updateGameInfo();
-            
+
             if (beatCount >= totalBeats) {
                 clearInterval(beatInterval);
                 setTimeout(() => {
@@ -1203,10 +1178,10 @@ class FriendMemoryGame {
                 }, 500);
             }
         }, this.getBeatInterval());
-        
+
         this.beatTimer = beatInterval;
     }
-    
+
     showPreparationPhase(beat) {
         const gameDisplay = document.querySelector('.game-display');
         if (gameDisplay && beat === 1) {
@@ -1220,29 +1195,29 @@ class FriendMemoryGame {
                 </div>
             `;
         }
-        
+
         if (beat <= 8) {
             const friend = this.gameSequence[beat - 1];
             if (friend && friend.photo) {
                 const img = new Image();
-                img.src = friend.photo.startsWith('http') ? friend.photo : 
-                          friend.photo.startsWith('uploads/') ? friend.photo : 
-                          `uploads/${friend.id}/${friend.photo}`;
+                img.src = friend.photo.startsWith('http') ? friend.photo :
+                    friend.photo.startsWith('uploads/') ? friend.photo :
+                        `uploads/${friend.id}/${friend.photo}`;
             }
         }
     }
-    
+
     setupNameSelection() {
         const nameSelection = document.getElementById('nameSelection');
         nameSelection.style.display = 'block';
-        
+
         this.generateFixedNameOptions();
     }
-    
+
     generateFixedNameOptions() {
         const nameGrid = document.getElementById('nameGrid');
         nameGrid.innerHTML = '';
-        
+
         if (!this.shuffledOptions) {
             const correctNames = this.gameSequence.map(friend => friend.username);
             const allFriends = [...this.gameData];
@@ -1250,11 +1225,11 @@ class FriendMemoryGame {
                 .filter(friend => !correctNames.includes(friend.username))
                 .map(friend => friend.username)
                 .slice(0, 4);
-            
+
             const allOptions = [...correctNames, ...distractorNames];
             this.shuffledOptions = allOptions.sort(() => Math.random() - 0.5);
         }
-        
+
         this.shuffledOptions.forEach(name => {
             const button = document.createElement('button');
             button.className = 'name-option';
@@ -1263,7 +1238,7 @@ class FriendMemoryGame {
             nameGrid.appendChild(button);
         });
     }
-    
+
     startShowingPhase() {
         const gameDisplay = document.querySelector('.game-display');
         if (gameDisplay) {
@@ -1274,52 +1249,52 @@ class FriendMemoryGame {
                 </div>
             `;
         }
-        
+
         this.generateFixedNameOptions();
     }
-    
+
     showDisplayPhase(beat) {
         const showingGrid = document.getElementById('showingGrid');
         if (!showingGrid) return;
-        
+
         if (beat <= 8) {
             const friend = this.gameSequence[beat - 1];
-            const photoSrc = friend.photo && friend.photo !== 'null' && friend.photo !== '' ? 
-                (friend.photo.startsWith('uploads/') || friend.photo.startsWith('/') || friend.photo.startsWith('http') ? 
-                 friend.photo : `uploads/${friend.id}/${friend.photo}`) : '';
-            
+            const photoSrc = friend.photo && friend.photo !== 'null' && friend.photo !== '' ?
+                (friend.photo.startsWith('uploads/') || friend.photo.startsWith('/') || friend.photo.startsWith('http') ?
+                    friend.photo : `uploads/${friend.id}/${friend.photo}`) : '';
+
             const photoItem = document.createElement('div');
             photoItem.className = 'reference-photo-item appear';
             photoItem.innerHTML = `
                 <div class="photo-order">${beat}</div>
-                ${photoSrc ? `<img src="${photoSrc}" alt="${friend.username}">` : 
-                  `<div class="no-photo">${friend.username.charAt(0)}</div>`}
+                ${photoSrc ? `<img src="${photoSrc}" alt="${friend.username}">` :
+                    `<div class="no-photo">${friend.username.charAt(0)}</div>`}
             `;
             showingGrid.appendChild(photoItem);
         }
     }
-    
+
     startPlayingPhase() {
         this.playerSequence = [];
         this.playerAnsweredThisBeat = false;
     }
-    
+
     handlePlayerPhase(beat) {
         if (beat > 1 && !this.playerAnsweredThisBeat) {
-            this.playerSequence.push({ 
-                name: '未回答', 
+            this.playerSequence.push({
+                name: '未回答',
                 correct: false,
-                missed: true 
+                missed: true
             });
         }
-        
+
         this.playerAnsweredThisBeat = false;
-        
+
     }
-    
+
     showBeatIndicator() {
         let indicator = document.getElementById('beatIndicator');
-        
+
         if (!indicator) {
             const photoDisplay = document.getElementById('photoDisplay');
             if (photoDisplay) {
@@ -1340,11 +1315,11 @@ class FriendMemoryGame {
                 photoDisplay.appendChild(indicator);
             }
         }
-        
+
         if (indicator) {
             indicator.style.transform = 'translate(-50%, -50%) scale(1.2)';
             indicator.style.opacity = '1';
-            
+
             setTimeout(() => {
                 if (indicator) {
                     indicator.style.transform = 'translate(-50%, -50%) scale(1)';
@@ -1353,11 +1328,11 @@ class FriendMemoryGame {
             }, 200);
         }
     }
-    
+
     showFriendPhoto(friend, keepVisible = false) {
         const photoElement = document.getElementById('currentPhoto');
         const nameElement = document.getElementById('currentFriendName');
-        
+
         if (friend.photo && friend.photo !== 'null' && friend.photo !== '') {
             if (friend.photo.startsWith('uploads/') || friend.photo.startsWith('/') || friend.photo.startsWith('http')) {
                 photoElement.src = friend.photo;
@@ -1373,24 +1348,24 @@ class FriendMemoryGame {
         if (!keepVisible) {
             nameElement.textContent = friend.username;
             nameElement.style.display = 'block';
-            
+
             setTimeout(() => {
                 photoElement.style.display = 'none';
                 nameElement.style.display = 'none';
             }, 800);
         }
     }
-    
+
     selectName(name) {
         if (this.gamePhase !== 'playing' || this.playerAnsweredThisBeat) {
             return;
         }
-        
+
         const expectedName = this.gameSequence[this.playerSequence.length].username;
         const isCorrect = name === expectedName;
-        
+
         this.playerAnsweredThisBeat = true;
-        
+
         const buttons = document.querySelectorAll('.name-option');
         buttons.forEach(btn => {
             if (btn.textContent === name) {
@@ -1398,9 +1373,9 @@ class FriendMemoryGame {
             }
             btn.disabled = true;
         });
-        
+
         this.playerSequence.push({ name, correct: isCorrect });
-        
+
         setTimeout(() => {
             buttons.forEach(btn => {
                 btn.disabled = false;
@@ -1408,30 +1383,30 @@ class FriendMemoryGame {
             });
         }, 300);
     }
-    
+
     endGame() {
         this.gamePhase = 'finished';
-        
+
         if (this.beatTimer) {
             clearInterval(this.beatTimer);
         }
-        
+
         const correctCount = this.playerSequence.filter(p => p.correct).length;
         const accuracy = Math.round((correctCount / 8) * 100);
         const gameTime = Math.round((Date.now() - this.startTime) / 1000);
-        
+
         this.showGameResults(accuracy, gameTime, correctCount);
     }
-    
+
     showGameResults(accuracy, gameTime, correctCount) {
         this.showGameScreen('gameResultScreen');
-        
+
         const resultIcon = document.getElementById('resultIcon');
         const resultTitle = document.getElementById('resultTitle');
-        
+
         const missedBeats = this.playerSequence.filter(p => p.missed).length;
         const wrongAnswers = this.playerSequence.filter(p => !p.correct && !p.missed).length;
-        
+
         if (accuracy >= 80) {
             resultIcon.textContent = '🏆';
             resultTitle.textContent = '太棒了！節拍感超強！';
@@ -1442,10 +1417,10 @@ class FriendMemoryGame {
             resultIcon.textContent = '😅';
             resultTitle.textContent = '多練習節拍感，會越來越好！';
         }
-        
+
         document.getElementById('accuracyRate').textContent = `${accuracy}%`;
         document.getElementById('gameTime').textContent = `${gameTime}秒`;
-        
+
         const gameDifficultyElement = document.getElementById('gameDifficulty');
         gameDifficultyElement.innerHTML = `
             <small style="color: var(--text-secondary); font-size: 0.8em;">
@@ -1453,18 +1428,18 @@ class FriendMemoryGame {
             </small>
         `;
     }
-    
+
     showGameScreen(screenId) {
         document.querySelectorAll('.game-screen').forEach(screen => {
             screen.classList.remove('active');
         });
         document.getElementById(screenId).classList.add('active');
     }
-    
+
     updateGameInfo() {
         const totalBeats = 24;
         document.getElementById('currentBeat').textContent = this.currentBeat;
-        
+
         const phaseText = {
             'preparing': `準備階段 - 第${this.currentBeat}拍，正在載入資料...`,
             'showing': `展示階段 - 第${this.currentBeat}拍，記住照片順序！`,
@@ -1472,11 +1447,11 @@ class FriendMemoryGame {
             'finished': '遊戲結束'
         };
         document.getElementById('gamePhase').textContent = phaseText[this.gamePhase] || '準備中';
-        
+
         const progress = (this.currentBeat / totalBeats) * 100;
         document.getElementById('progressFill').style.width = `${progress}%`;
     }
-    
+
     stopGame() {
         if (confirm('確定要結束遊戲嗎？')) {
             if (this.audio) {
@@ -1487,28 +1462,28 @@ class FriendMemoryGame {
             this.hideModal('gameModal');
         }
     }
-    
+
     resetGame() {
         if (this.beatTimer) {
             clearInterval(this.beatTimer);
         }
-        
+
         if (this.audio) {
             this.audio.pause();
             this.audio.currentTime = 0;
         }
-        
+
         this.gamePhase = 'waiting';
         this.currentBeat = 0;
         this.gameSequence = [];
         this.playerSequence = [];
         this.customMusicLoaded = false;
-        
+
         const nameSelection = document.getElementById('nameSelection');
         if (nameSelection) {
             nameSelection.style.display = 'none';
         }
-        
+
         this.showGameScreen('gameStartScreen');
     }
 }

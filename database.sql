@@ -1,4 +1,12 @@
+/* Initialize Database and User */
 CREATE DATABASE IF NOT EXISTS photo_rewind CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+/* Update User Privileges */
+CREATE USER IF NOT EXISTS 'CVML'@'localhost' IDENTIFIED BY '114DWP2025';
+ALTER USER 'CVML'@'localhost' IDENTIFIED BY '114DWP2025';
+GRANT ALL PRIVILEGES ON photo_rewind.* TO 'CVML'@'localhost';
+FLUSH PRIVILEGES;
+
 USE photo_rewind;
 
 DROP TABLE IF EXISTS comments;
@@ -135,10 +143,4 @@ INSERT INTO comments (user_id, photo_id, content) VALUES
 (2, 5, '101真的很壯觀'),
 (3, 7, '富士山一直是我的夢想！');
 
-SELECT 'Database initialized successfully!' AS status;
-SELECT CONCAT('Users: ', COUNT(*)) AS count FROM users;
-SELECT CONCAT('Albums: ', COUNT(*)) AS count FROM albums;
-SELECT CONCAT('Photos: ', COUNT(*)) AS count FROM photos;
-SELECT CONCAT('Friendships: ', COUNT(*)) AS count FROM friendships;
-SELECT CONCAT('Likes: ', COUNT(*)) AS count FROM likes;
-SELECT CONCAT('Comments: ', COUNT(*)) AS count FROM comments;
+SELECT 'Database and User initialized successfully!' AS status;
